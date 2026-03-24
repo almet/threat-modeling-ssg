@@ -1,0 +1,47 @@
+{% if model.components %}
+{% set prop_keys = model.components.values() | first | attr('properties') | list %}
+<div class="prop-table-wrap">
+<table class="prop-table">
+    <thead>
+        <tr>
+            <th class="prop-sticky">Components</th>
+            {% for key in prop_keys %}
+            <th class="prop-col"><div>{{ key | replace('_', ' ') | title }}</div></th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for comp_name, component in model.components.items() %}
+        <tr>
+            <td class="prop-sticky" title="{{ comp_name }} — {{ component.component_class }}{% if component.inBoundary %} · {{ component.inBoundary }}{% endif %}">
+                <a href="component_{{ comp_name | slugify }}.html">{{ comp_name }}</a>
+                <div class="prop-meta">{{ component.component_class }}{% if component.inBoundary %} · {{ component.inBoundary }}{% endif %}</div>
+            </td>
+            {% for key in prop_keys %}
+            {% set val = component.properties[key] %}
+	    {% set label = key | replace('_', ' ') | title %}{% if val is sameas true %}<td class="prop-cell prop-true" data-tooltip="{{ comp_name }} · {{ label }} = true">✓</td>{% elif val is sameas false %}<td class="prop-cell prop-false" data-tooltip="{{ comp_name }} · {{ label }} = false">✗</td>{% else %}<td class="prop-cell" data-tooltip="{{ comp_name }} · {{ label }} = {{ val }}">{{ val }}</td>{% endif %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+<script>
+(function() {
+    var table = document.querySelector('.prop-table');
+    var headerRow = table.querySelector('thead tr');
+
+    table.querySelectorAll('td.prop-cell').forEach(function(cell) {
+        cell.addEventListener('mouseenter', function() {
+            cell.parentElement.cells[0].classList.add('prop-highlight');
+            headerRow.cells[cell.cellIndex].classList.add('prop-highlight');
+        });
+        cell.addEventListener('mouseleave', function() {
+            table.querySelectorAll('.prop-highlight').forEach(function(el) {
+                el.classList.remove('prop-highlight');
+            });
+        });
+    });
+})();
+</script>
+{% endif %}

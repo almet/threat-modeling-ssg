@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@viz-js/viz": "^3",
+    "mermaid": "^11"
+  },
+  "scripts": {
+    "install-assets": "cp node_modules/@viz-js/viz/dist/viz-global.js templates/assets/ && cp node_modules/mermaid/dist/mermaid.min.js templates/assets/"
+  }
+}

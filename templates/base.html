@@ -1,23 +1,47 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Threat Model{% endblock %}</title>
+    <script>
+        (function() {
+            var t = localStorage.getItem('theme');
+            if (t) document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
     <link rel="stylesheet" href="assets/main.css">
 </head>
 <body>
     <div class="main-container">
         <header>
-            <h1>Threat Model Report</h1>
-            <nav>
-                <a href="summary.html">Summary</a>
-                <a href="components.html">Components</a>
-            </nav>
+            <div class="heading-left">
+                <h1><a href="index.html">{{ config.title }}</a></h1>
+            </div>
+            <div class="heading-right">
+                <label class="theme-toggle" title="Toggle light/dark mode">
+                    <input type="checkbox" id="theme-toggle-input">
+                    <span class="theme-toggle__track"><span class="theme-toggle__thumb"></span></span>
+                </label>
+                <img src="assets/icon.png" alt="Logo">
+            </div>
         </header>
         <div class="content">
             {% block content %}{% endblock %}
         </div>
     </div>
+    <script>
+        (function() {
+            var input = document.getElementById('theme-toggle-input');
+            var root  = document.documentElement;
+            input.checked = (root.getAttribute('data-theme') === 'light');
+            input.addEventListener('change', function() {
+                var theme = input.checked ? 'light' : 'dark';
+                root.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+            });
+        })();
+    </script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

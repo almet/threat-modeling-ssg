@@ -3,34 +3,59 @@
 {% block title %}{{ threat_id }}: {{ threat.name }} - Threat Model{% endblock %}
 
 {% block content %}
-<h1>{{ threat_id }}: {{ threat.name }}</h1>
+<h1>
+	<a href="https://capec.mitre.org/data/definitions/{{ threat_id.replace('CAPEC-', '') }}.html">
+	{{ threat_id }}: {{ threat.name }}
+	</a>
+</h1>
 
-<div class="card">
-    <h3>Description</h3>
-    <p>{{ threat.description }}</p>
-    <p><a href="https://capec.mitre.org/data/definitions/{{ threat_id.replace('CAPEC-', '') }}.html" target="_blank">View on CAPEC website</a></p>
-</div>
+<p>{{ threat.description }}</p>
+
 
 <div class="stats">
-    <div class="stat-card">
-        <h3>Frequency</h3>
-        <div class="value">{{ frequency }}</div>
-        <small>occurrences in scenarios</small>
+    <div class="count-box count-box--{{ threat.severity.lower() }}">
+        <div class="count-box__value">{{ threat.severity }}</div>
+        <div class="count-box__label">Severity</div>
     </div>
-    <div class="stat-card">
-        <h3>Affected Components</h3>
-        <div class="value">{{ components | length }}</div>
+    <div class="count-box count-box--red">
+        <div class="count-box__value">{{ frequency }}</div>
+        <div class="count-box__note">occurrences in scenarios</div>
+        <div class="count-box__label">Frequency</div>
     </div>
-    <div class="stat-card">
-        <h3>Affected Scenarios</h3>
-        <div class="value">{{ scenarios | length }}</div>
+    <div class="count-box count-box--orange">
+        <div class="count-box__value">{{ components | length }}</div>
+        <div class="count-box__label">Affected Components</div>
+    </div>
+    <div class="count-box count-box--blue">
+        <div class="count-box__value">{{ scenarios | length }}</div>
+        <div class="count-box__label">Affected Scenarios</div>
     </div>
 </div>
 
 <h2>Requirements and Mitigations</h2>
-<div class="card">
-    <p><em>Requirements and mitigations data not yet available in the threat model.</em></p>
-    <p>See <a href="https://capec.mitre.org/data/definitions/{{ threat_id.replace('CAPEC-', '') }}.html" target="_blank">CAPEC entry</a> for detailed information.</p>
+<div class="stats">
+    <div class="card" style="flex: 1; margin: 5px;">
+        <h3>Requirements</h3>
+        <p>Component properties that must be true for this threat to apply:</p>
+        <div class="tag-list">
+            {% for prop in threat.mapping.requirements %}
+            <span class="tag tag--true">{{ prop | replace('_', ' ') }}</span>
+            {% else %}
+            <em>None specified.</em>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card" style="flex: 1; margin: 5px;">
+        <h3>Mitigations</h3>
+        <p>Component properties that mitigate this threat:</p>
+        <div class="tag-list">
+            {% for prop in threat.mapping.mitigations %}
+            <span class="tag tag--false">{{ prop | replace('_', ' ') }}</span>
+            {% else %}
+            <em>None specified.</em>
+            {% endfor %}
+        </div>
+    </div>
 </div>
 
 <h2>Affected Components</h2>
@@ -46,7 +71,7 @@
     <tbody>
         {% for comp_name in components %}
         <tr>
-            <td><a href="component_{{ comp_name.replace('.', '_') }}.html">{{ comp_name }}</a></td>
+            <td><a href="component_{{ comp_name | slugify }}.html">{{ comp_name }}</a></td>
             <td>{{ model.components[comp_name].description if comp_name in model.components else 'N/A' }}</td>
             <td>{{ model.components[comp_name].inBoundary if comp_name in model.components else 'N/A' }}</td>
         </tr>
@@ -74,5 +99,5 @@
     <p>This will show dataflow diagrams highlighting the affected components.</p>
 </div>
 
-<p><a href="summary.html">Back to Summary</a></p>
+<p><a href="index.html">Back to Summary</a></p>
 {% endblock %}

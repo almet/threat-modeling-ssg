@@ -3,40 +3,53 @@
 {% block title %}Scenario: {{ scenario.name }} - Threat Model{% endblock %}
 
 {% block content %}
-<h1>Scenario: {{ scenario.name }}</h1>
+<h1>Scenario: {{ scenario.name }} <small>(<a href="{{ scenario.url }}">{{ scenario.file }}</a>)</small></h1>
 
-<div class="card">
-    <h3>Description</h3>
-    <p>{{ scenario.description }}</p>
-</div>
+<p>{{ scenario.description }}</p>
 
 <div class="stats">
-    <div class="stat-card">
-        <h3>Data Flows</h3>
-        <div class="value">{{ scenario.flows | length }}</div>
+    <div class="count-box count-box--red">
+        <div class="count-box__value">{{ scenario.findings | length }}</div>
+        <div class="count-box__label">Findings</div>
     </div>
-    <div class="stat-card">
-        <h3>Findings</h3>
-        <div class="value">{{ scenario.findings | length }}</div>
+    <div class="count-box count-box--blue">
+        <div class="count-box__value">{{ scenario.flows | length }}</div>
+        <div class="count-box__label">Data Flows</div>
     </div>
-    <div class="stat-card">
-        <h3>Affected Components</h3>
-        <div class="value">{{ scenario.findings | map(attribute='target') | unique | list | length }}</div>
+    <div class="count-box count-box--orange">
+        <div class="count-box__value">{{ scenario.findings | map(attribute='target') | unique | list | length }}</div>
+        <div class="count-box__label">Affected Components</div>
     </div>
 </div>
 
 <h2>Data Flow Diagram</h2>
-<div class="card">
-    <p><em>Diagram generation not yet implemented.</em></p>
-    <p>This will show a visual representation of the data flows below.</p>
+{% if scenario.dfd %}
+<div class="click-zoom">
+    <label>
+        <input type="checkbox">
+        <div id="dfd-container" class="dfd-container"></div>
+    </label>
 </div>
+{% endif %}
 
-<h2>Data Flows</h2>
+<h2>Sequence Diagram</h2>
+{% if scenario.mermaid %}
+<div class="click-zoom">
+    <label>
+        <input type="checkbox">
+        <div id="mermaid-container" class="mermaid-container">
+            <pre class="mermaid">{{ scenario.mermaid }}</pre>
+        </div>
+    </label>
+</div>
+{% endif %}
+
+<details>
+<summary>Show data flows</summary>
 <table>
     <thead>
         <tr>
             <th>Flow ID</th>
-            <th>Name</th>
             <th>Source</th>
             <th>Sink</th>
             <th>Type</th>
@@ -46,12 +59,11 @@
         {% for flow in scenario.flows %}
         <tr>
             <td>{{ flow.id }}</td>
-            <td>{{ flow.name }}</td>
             <td>{{ flow.source }}</td>
             <td>{{ flow.sink }}</td>
             <td>
-                {% if flow.isResponse %}
-                Response to {{ flow.responseTo }}
+                {% if flow.is_response %}
+                Response to {{ flow.response_to }}
                 {% else %}
                 Request
                 {% endif %}
@@ -60,12 +72,7 @@
         {% endfor %}
     </tbody>
 </table>
-
-<h2>UML Sequence Diagram</h2>
-<div class="card">
-    <p><em>Diagram generation not yet implemented.</em></p>
-    <p>This will show a UML sequence diagram of the data flows.</p>
-</div>
+</details>
 
 <h2>Applicable CAPEC Threats</h2>
 {% if scenario.findings %}
@@ -76,15 +83,22 @@
             <th>Name</th>
             <th>Target Component</th>
             <th>Description</th>
+            <th>Mitigations</th>
         </tr>
     </thead>
     <tbody>
         {% for finding in scenario.findings %}
+        {% set threat = model.threats[finding.threat_id] %}
         <tr>
             <td><a href="threat_{{ finding.threat_id }}.html">{{ finding.threat_id }}</a></td>
-            <td>{{ model.threats[finding.threat_id].name }}</td>
-            <td><a href="component_{{ finding.target.replace('.', '_') }}.html">{{ finding.target }}</a></td>
-            <td>{{ model.threats[finding.threat_id].description }}</td>
+            <td>{{ threat.name }}</td>
+            <td><a href="component_{{ finding.target | slugify }}.html">{{ finding.target }}</a></td>
+            <td>{{ threat.description }}</td>
+            <td>
+                {% for prop in threat.mapping.mitigations %}
+                <span class="tag tag--true">{{ prop | replace('_', ' ') }}</span>
+                {% endfor %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>
@@ -93,5 +107,68 @@
 <p>No threats identified for this scenario.</p>
 {% endif %}
 
-<p><a href="summary.html">Back to Summary</a></p>
+<p><a href="index.html">Back to Summary</a></p>
+{% endblock %}
+
+{% block scripts %}
+{% if scenario.dfd %}
+<script src="assets/viz-global.js"></script>
+<script>
+    Viz.instance().then(function(viz) {
+        var svg = viz.renderSVGElement({{ scenario.dfd | tojson }});
+        svg.style.width = "100%";
+        svg.style.height = "auto";
+        document.getElementById("dfd-container").appendChild(svg);
+    });
+
+    // In order to follow the mouse when zooming in (otherwise it's in pure CSS)
+    var el = document.getElementById("dfd-container");
+    el.addEventListener("mousemove", function(e) {
+        var r = el.getBoundingClientRect();
+        el.style.transformOrigin =
+            ((e.clientX - r.left) / r.width * 100).toFixed(1) + "% " +
+            ((e.clientY - r.top)  / r.height * 100).toFixed(1) + "%";
+    });
+</script>
+{% endif %}
+{% if scenario.mermaid %}
+<script src="assets/mermaid.min.js"></script>
+<script>
+    (function() {
+        var s = getComputedStyle(document.documentElement);
+        var v = function(name) { return s.getPropertyValue(name).trim(); };
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                background:        v('--color-bg'),
+                primaryColor:      v('--color-bg-header'),
+                primaryTextColor:  v('--color-text'),
+                primaryBorderColor:v('--color-border'),
+                lineColor:         v('--color-accent'),
+                secondaryColor:    v('--color-bg-container'),
+                tertiaryColor:     v('--color-bg-hover'),
+                noteBkgColor:      v('--color-bg-hover'),
+                noteTextColor:     v('--color-text'),
+                activationBkgColor:v('--color-bg-hover'),
+                actorBkg:          v('--color-bg-header'),
+                actorBorder:       v('--color-border'),
+                actorTextColor:    v('--color-text'),
+                actorLineColor:    v('--color-border'),
+                signalColor:       v('--color-text-dim'),
+                signalTextColor:   v('--color-text-dim'),
+                fontFamily:        "'Share Tech Mono', monospace",
+            },
+        });
+    })();
+
+    var mc = document.getElementById("mermaid-container");
+    mc.addEventListener("mousemove", function(e) {
+        var r = mc.getBoundingClientRect();
+        mc.style.transformOrigin =
+            ((e.clientX - r.left) / r.width  * 100).toFixed(1) + "% " +
+            ((e.clientY - r.top)  / r.height * 100).toFixed(1) + "%";
+    });
+</script>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,4 @@
+node_modules/
+output/
+data.json
+templates/assets/*.js

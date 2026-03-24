@@ -5,50 +5,28 @@
 {% block content %}
 <h1>Component: {{ comp_name }}</h1>
 
-<div class="card">
-    <h3>Description</h3>
-    <p>{{ component.description }}</p>
+<p>{{ component.description }}</p>
+
+<div class="tag-list">
+    {% if component.inBoundary %}<span class="tag tag--text">boundary: {{ component.inBoundary }}</span>{% endif %}
+    {% for key, value in component.properties | implemented %}
+    {% if value is sameas true %}
+    <span class="tag tag--true">{{ key | replace('_', ' ') }}</span>
+    {% else %}
+    <span class="tag tag--text">{{ key | replace('_', ' ') }}: {{ value }}</span>
+    {% endif %}
+    {% endfor %}
 </div>
 
-<h2>Properties</h2>
-<table>
-    <thead>
-        <tr>
-            <th>Property</th>
-            <th>Value</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>Boundary</td>
-            <td>{{ component.inBoundary }}</td>
-        </tr>
-        <tr>
-            <td>Operating System</td>
-            <td>{{ component.properties.OS }}</td>
-        </tr>
-        <tr>
-            <td>Reads Input</td>
-            <td>{% if component.properties.reads_input %}✓{% endif %}</td>
-        </tr>
-        <tr>
-            <td>Sanitizes Input</td>
-            <td>{% if component.properties.sanitizes_input %}✓{% endif %}</td>
-        </tr>
-        <tr>
-            <td>Loads External Resources</td>
-            <td>{% if component.properties.loads_external_resources %}✓{% endif %}</td>
-        </tr>
-        <tr>
-            <td>Writes Logs</td>
-            <td>{% if component.properties.writes_logs %}✓{% endif %}</td>
-        </tr>
-        <tr>
-            <td>Executes System Scripts</td>
-            <td>{% if component.properties.executes_system_scripts %}✓{% endif %}</td>
-        </tr>
-    </tbody>
-</table>
+{% if unimplemented_mitigations %}
+<h2>Potential Mitigations</h2>
+    <p>Properties not currently implemented that would mitigate applicable threats:</p>
+    <div class="tag-list">
+        {% for prop in unimplemented_mitigations %}
+        <span class="tag tag--false">{{ prop | replace('_', ' ') }}</span>
+        {% endfor %}
+    </div>
+{% endif %}
 
 <h2>Threats Affecting This Component</h2>
 {% if threats %}
@@ -58,14 +36,23 @@
             <th>Threat ID</th>
             <th>Name</th>
             <th>Description</th>
+            <th>Potential Mitigations</th>
         </tr>
     </thead>
     <tbody>
         {% for threat_id in threats %}
+        {% set threat = model.threats[threat_id] %}
         <tr>
             <td><a href="threat_{{ threat_id }}.html">{{ threat_id }}</a></td>
-            <td>{{ model.threats[threat_id].name }}</td>
-            <td>{{ model.threats[threat_id].description }}</td>
+            <td>{{ threat.name }}</td>
+            <td>{{ threat.description }}</td>
+            <td>
+                {% for prop in threat.mapping.mitigations %}
+                {% if component.properties.get(prop) is sameas false %}
+                <span class="tag tag--false">{{ prop | replace('_', ' ') }}</span>
+                {% endif %}
+                {% endfor %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>
@@ -85,5 +72,5 @@
 <p>This component is not used in any scenarios.</p>
 {% endif %}
 
-<p><a href="components.html">Back to Components List</a> | <a href="summary.html">Back to Summary</a></p>
+<p><a href="components.html">Back to Components List</a> | <a href="index.html">Back to Summary</a></p>
 {% endblock %}
