@@ -83,21 +83,64 @@
 {% endif %}
 
 <h2>Affected Scenarios</h2>
-{% if scenarios %}
-<ul>
-    {% for scenario_name in scenarios %}
-    <li><a href="scenario_{{ scenario_name.replace(' ', '_') }}.html">{{ scenario_name }}</a></li>
-    {% endfor %}
-</ul>
+{% if threat_scenario_data %}
+{% for item in threat_scenario_data %}
+<details class="scenario-details">
+    <summary>
+        <a href="scenario_{{ item.scenario.name.replace(' ', '_') }}.html">{{ item.scenario.name }}</a>
+        <span class="affected-components-inline">
+            — affects:
+            {% for comp in item.affected_components %}
+            <a href="component_{{ comp | slugify }}.html" class="tag tag--false">{{ comp }}</a>
+            {% endfor %}
+        </span>
+    </summary>
+    {% if item.highlighted_dfd %}
+    <div class="click-zoom" style="margin-top: 0.75rem;">
+        <label>
+            <input type="checkbox">
+            <div id="dfd-threat-{{ loop.index }}" class="dfd-container"></div>
+        </label>
+    </div>
+    {% else %}
+    <p><em>No data flow diagram available for this scenario.</em></p>
+    {% endif %}
+</details>
+{% endfor %}
 {% else %}
 <p>No scenarios affected by this threat.</p>
 {% endif %}
 
-<h2>Affected Diagrams</h2>
-<div class="card">
-    <p><em>Diagram generation not yet implemented.</em></p>
-    <p>This will show dataflow diagrams highlighting the affected components.</p>
-</div>
-
 <p><a href="index.html">Back to Summary</a></p>
+{% endblock %}
+
+{% block scripts %}
+{% set has_dfd = threat_scenario_data | selectattr("highlighted_dfd") | list | length > 0 %}
+{% if has_dfd %}
+<script src="assets/viz-global.js"></script>
+<script>
+Viz.instance().then(function(viz) {
+    {% for item in threat_scenario_data %}
+    {% if item.highlighted_dfd %}
+    (function() {
+        var svg = viz.renderSVGElement({{ item.highlighted_dfd | tojson }});
+        svg.style.width = "100%";
+        svg.style.height = "auto";
+        document.getElementById("dfd-threat-{{ loop.index }}").appendChild(svg);
+    })();
+    {% endif %}
+    {% endfor %}
+});
+
+// Follow mouse on zoom for each DFD container
+document.querySelectorAll(".dfd-container").forEach(function(el) {
+    el.addEventListener("mousemove", function(e) {
+        var r = el.getBoundingClientRect();
+        el.style.transformOrigin =
+            ((e.clientX - r.left) / r.width * 100).toFixed(1) + "% " +
+            ((e.clientY - r.top)  / r.height * 100).toFixed(1) + "%";
+    });
+});
+</script>
+{% endif %}
 {% endblock %}

@@ -141,6 +141,34 @@ def analyze_data(model: ThreatModel):
         "components_to_scenarios": components_to_scenarios,
     }
 
+def generate_highlighted_dfd(dfd: str, highlight_components: set) -> str:
+    """Modify a DOT graph string to highlight specific components by label."""
+    if not highlight_components or not dfd:
+        return dfd
+
+    def highlighter(match):
+        node_id = match.group(1)
+        attrs = match.group(2)
+        label_match = re.search(r'label\s*=\s*"([^"]*)"', attrs)
+        if label_match and label_match.group(1) in highlight_components:
+            # Detect indentation from existing attribute lines
+            indent_match = re.search(r'^(\s+)\S', attrs, re.MULTILINE)
+            indent = indent_match.group(1) if indent_match else "        "
+            stripped = attrs.rstrip()
+            trailing = attrs[len(stripped):]
+            attrs = (
+                f'{stripped}\n{indent}style = "filled";\n'
+                f'{indent}fillcolor = "#c0392b";\n{indent}fontcolor = "white";{trailing}'
+            )
+        return f"{node_id} [{attrs}]"
+
+    pattern = re.compile(
+        r"\b((?:process|actor|datastore|externalentity|boundary)_\w+)\s*\[([^\[\]]+)\]",
+        re.DOTALL,
+    )
+    return pattern.sub(highlighter, dfd)
+
+
 def generate_mermaid(scenario: Scenario) -> str:
     if not scenario.flows:
         return ""
@@ -223,18 +251,40 @@ def main():
 
     (output_dir / "index.html").write_text(html)
 
+    # Build scenario lookup
+    scenario_by_name = {s.name: s for s in model.scenarios}
+
     # Generate threat pages
     print(f"Generating {len(model.threats)} threat pages...")
     template = env.get_template("threat.html")
     for threat_id, threat in model.threats.items():
+        scenario_names = analysis["threats_to_scenarios"].get(threat_id, [])
+        threat_scenario_data = []
+        for scenario_name in scenario_names:
+            scenario = scenario_by_name.get(scenario_name)
+            if scenario:
+                affected_in_scenario = [
+                    f.target for f in scenario.findings if f.threat_id == threat_id
+                ]
+                highlighted_dfd = (
+                    generate_highlighted_dfd(scenario.dfd, set(affected_in_scenario))
+                    if scenario.dfd
+                    else None
+                )
+                threat_scenario_data.append({
+                    "scenario": scenario,
+                    "affected_components": affected_in_scenario,
+                    "highlighted_dfd": highlighted_dfd,
+                })
         html = template.render(
             config=config,
             threat_id=threat_id,
             threat=threat,
             components=analysis["threats_to_components"].get(threat_id, set()),
-            scenarios=analysis["threats_to_scenarios"].get(threat_id, []),
+            scenarios=scenario_names,
             frequency=analysis["threat_counter"].get(threat_id, 0),
             model=model,
+            threat_scenario_data=threat_scenario_data,
         )
         (output_dir / f"threat_{threat_id}.html").write_text(html)
 

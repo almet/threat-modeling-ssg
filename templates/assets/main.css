@@ -513,6 +513,31 @@ details summary:hover {
     text-shadow: var(--color-glow-strong);
 }
 
+.scenario-details {
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 6px 0;
+    background: var(--color-bg-header);
+}
+
+.scenario-details[open] {
+    padding-bottom: 12px;
+}
+
+.affected-components-inline {
+    font-size: 0.85em;
+    color: var(--color-text-dim);
+    font-weight: normal;
+}
+
+.affected-components-inline a.tag {
+    font-size: 0.9em;
+    padding: 1px 6px;
+    margin-left: 2px;
+    text-decoration: none;
+}
+
 .card {
     border: 1px solid var(--color-border);
     padding: 15px;
