@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}{{ threat_id }}: {{ threat.name }} - Threat Model{% endblock %}
+
+{% block content %}
+<h1>{{ threat_id }}: {{ threat.name }}</h1>
+
+<div class="card">
+    <h3>Description</h3>
+    <p>{{ threat.description }}</p>
+    <p><a href="https://capec.mitre.org/data/definitions/{{ threat_id.replace('CAPEC-', '') }}.html" target="_blank">View on CAPEC website</a></p>
+</div>
+
+<div class="stats">
+    <div class="stat-card">
+        <h3>Frequency</h3>
+        <div class="value">{{ frequency }}</div>
+        <small>occurrences in scenarios</small>
+    </div>
+    <div class="stat-card">
+        <h3>Affected Components</h3>
+        <div class="value">{{ components | length }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Affected Scenarios</h3>
+        <div class="value">{{ scenarios | length }}</div>
+    </div>
+</div>
+
+<h2>Requirements and Mitigations</h2>
+<div class="card">
+    <p><em>Requirements and mitigations data not yet available in the threat model.</em></p>
+    <p>See <a href="https://capec.mitre.org/data/definitions/{{ threat_id.replace('CAPEC-', '') }}.html" target="_blank">CAPEC entry</a> for detailed information.</p>
+</div>
+
+<h2>Affected Components</h2>
+{% if components %}
+<table>
+    <thead>
+        <tr>
+            <th>Component</th>
+            <th>Description</th>
+            <th>Boundary</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for comp_name in components %}
+        <tr>
+            <td><a href="component_{{ comp_name.replace('.', '_') }}.html">{{ comp_name }}</a></td>
+            <td>{{ model.components[comp_name].description if comp_name in model.components else 'N/A' }}</td>
+            <td>{{ model.components[comp_name].inBoundary if comp_name in model.components else 'N/A' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No components affected by this threat.</p>
+{% endif %}
+
+<h2>Affected Scenarios</h2>
+{% if scenarios %}
+<ul>
+    {% for scenario_name in scenarios %}
+    <li><a href="scenario_{{ scenario_name.replace(' ', '_') }}.html">{{ scenario_name }}</a></li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No scenarios affected by this threat.</p>
+{% endif %}
+
+<h2>Affected Diagrams</h2>
+<div class="card">
+    <p><em>Diagram generation not yet implemented.</em></p>
+    <p>This will show dataflow diagrams highlighting the affected components.</p>
+</div>
+
+<p><a href="summary.html">Back to Summary</a></p>
+{% endblock %}

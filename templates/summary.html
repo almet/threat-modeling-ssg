@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Summary - Threat Model{% endblock %}
+
+{% block content %}
+<h1>Threat Model Summary</h1>
+
+<div class="stats">
+    <div class="stat-card">
+        <h3>Total Components</h3>
+        <div class="value">{{ model.components | length }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Total Threats</h3>
+        <div class="value">{{ model.threats | length }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Total Scenarios</h3>
+        <div class="value">{{ model.scenarios | length }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>CAPEC Coverage</h3>
+        <div class="value">{{ "%.1f" | format((model.threats | length / total_capec_threats * 100)) }}%</div>
+        <small>{{ model.threats | length }} of {{ total_capec_threats }} CAPEC threats</small>
+    </div>
+</div>
+
+<h2>Component Properties</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Component</th>
+            <th>Boundary</th>
+            <th>OS</th>
+            <th>Reads Input</th>
+            <th>Sanitizes Input</th>
+            <th>Loads External Resources</th>
+            <th>Writes Logs</th>
+            <th>Executes Scripts</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for comp_name, component in model.components.items() %}
+        <tr>
+            <td><a href="component_{{ comp_name.replace('.', '_') }}.html">{{ comp_name }}</a></td>
+            <td>{{ component.inBoundary }}</td>
+            <td>{{ component.properties.OS }}</td>
+            <td>{% if component.properties.reads_input %}✓{% endif %}</td>
+            <td>{% if component.properties.sanitizes_input %}✓{% endif %}</td>
+            <td>{% if component.properties.loads_external_resources %}✓{% endif %}</td>
+            <td>{% if component.properties.writes_logs %}✓{% endif %}</td>
+            <td>{% if component.properties.executes_system_scripts %}✓{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>CAPEC Threats by Frequency</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Threat ID</th>
+            <th>Name</th>
+            <th>Occurrences</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for threat_id, count in analysis.threats_by_frequency %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td><a href="threat_{{ threat_id }}.html">{{ threat_id }}</a></td>
+            <td>{{ model.threats[threat_id].name }}</td>
+            <td>{{ count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>All CAPEC Threats</h2>
+<div>
+    {% for threat_id, threat in model.threats.items() %}
+    <div class="card">
+        <h3><a href="threat_{{ threat_id }}.html">{{ threat_id }}: {{ threat.name }}</a></h3>
+        <p>{{ threat.description }}</p>
+        <p><strong>Occurrences:</strong> {{ analysis.threat_counter.get(threat_id, 0) }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

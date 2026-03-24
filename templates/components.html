@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Components - Threat Model{% endblock %}
+
+{% block content %}
+<h1>Components Overview</h1>
+
+<p>Total components: <strong>{{ model.components | length }}</strong></p>
+
+<h2>Components and Properties</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Component</th>
+            <th>Description</th>
+            <th>Boundary</th>
+            <th>OS</th>
+            <th>Reads Input</th>
+            <th>Sanitizes Input</th>
+            <th>Loads External</th>
+            <th>Writes Logs</th>
+            <th>Executes Scripts</th>
+            <th>Threats</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for comp_name, component in model.components.items() %}
+        <tr>
+            <td><a href="component_{{ comp_name.replace('.', '_') }}.html">{{ comp_name }}</a></td>
+            <td>{{ component.description }}</td>
+            <td>{{ component.inBoundary }}</td>
+            <td>{{ component.properties.OS }}</td>
+            <td>{% if component.properties.reads_input %}✓{% endif %}</td>
+            <td>{% if component.properties.sanitizes_input %}✓{% endif %}</td>
+            <td>{% if component.properties.loads_external_resources %}✓{% endif %}</td>
+            <td>{% if component.properties.writes_logs %}✓{% endif %}</td>
+            <td>{% if component.properties.executes_system_scripts %}✓{% endif %}</td>
+            <td>{{ analysis.components_to_threats.get(comp_name, []) | length }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Properties Summary</h2>
+<div class="card">
+    <h3>Security-Relevant Properties</h3>
+    <ul>
+        <li><strong>Reads Input:</strong> Component accepts external input</li>
+        <li><strong>Sanitizes Input:</strong> Component performs input validation/sanitization</li>
+        <li><strong>Loads External Resources:</strong> Component can load content from external sources</li>
+        <li><strong>Writes Logs:</strong> Component writes log data</li>
+        <li><strong>Executes Scripts:</strong> Component can execute system-level scripts</li>
+    </ul>
+</div>
+
+<p><a href="summary.html">Back to Summary</a></p>
+{% endblock %}

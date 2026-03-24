@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Scenario: {{ scenario.name }} - Threat Model{% endblock %}
+
+{% block content %}
+<h1>Scenario: {{ scenario.name }}</h1>
+
+<div class="card">
+    <h3>Description</h3>
+    <p>{{ scenario.description }}</p>
+</div>
+
+<div class="stats">
+    <div class="stat-card">
+        <h3>Data Flows</h3>
+        <div class="value">{{ scenario.flows | length }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Findings</h3>
+        <div class="value">{{ scenario.findings | length }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Affected Components</h3>
+        <div class="value">{{ scenario.findings | map(attribute='target') | unique | list | length }}</div>
+    </div>
+</div>
+
+<h2>Data Flow Diagram</h2>
+<div class="card">
+    <p><em>Diagram generation not yet implemented.</em></p>
+    <p>This will show a visual representation of the data flows below.</p>
+</div>
+
+<h2>Data Flows</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Flow ID</th>
+            <th>Name</th>
+            <th>Source</th>
+            <th>Sink</th>
+            <th>Type</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for flow in scenario.flows %}
+        <tr>
+            <td>{{ flow.id }}</td>
+            <td>{{ flow.name }}</td>
+            <td>{{ flow.source }}</td>
+            <td>{{ flow.sink }}</td>
+            <td>
+                {% if flow.isResponse %}
+                Response to {{ flow.responseTo }}
+                {% else %}
+                Request
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>UML Sequence Diagram</h2>
+<div class="card">
+    <p><em>Diagram generation not yet implemented.</em></p>
+    <p>This will show a UML sequence diagram of the data flows.</p>
+</div>
+
+<h2>Applicable CAPEC Threats</h2>
+{% if scenario.findings %}
+<table>
+    <thead>
+        <tr>
+            <th>Threat ID</th>
+            <th>Name</th>
+            <th>Target Component</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for finding in scenario.findings %}
+        <tr>
+            <td><a href="threat_{{ finding.threat_id }}.html">{{ finding.threat_id }}</a></td>
+            <td>{{ model.threats[finding.threat_id].name }}</td>
+            <td><a href="component_{{ finding.target.replace('.', '_') }}.html">{{ finding.target }}</a></td>
+            <td>{{ model.threats[finding.threat_id].description }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No threats identified for this scenario.</p>
+{% endif %}
+
+<p><a href="summary.html">Back to Summary</a></p>
+{% endblock %}

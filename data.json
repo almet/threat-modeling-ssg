@@ -1,0 +1,61 @@
+{
+  "threats": {
+    "CAPEC-4242": {
+      "name": "Something",
+      "description": "Description"
+    },
+    "CAPEC-4243": {
+      "name": "Something Else",
+      "description": "Another Description"
+    }
+  },
+
+
+  "components": {
+    "doc_to_pixels.py": {
+      "description": "Reads a suspicious documents and converts it to pixels.",
+      "inBoundary": "INNER_CONTAINER",
+      "properties": {
+        "OS": "Debian",
+        "reads_input": true,
+        "sanitizes_input": true,
+        "loads_external_resources": true,
+        "writes_logs": true,
+        "executes_system_scripts": true
+      }
+    }
+  },
+
+  "scenarios": [
+    {
+      "name": "Convert",
+      "description": "Threat model for Dangerzone (not detailed)",
+      "findings": [
+        {
+          "target": "doc_to_pixels.py",
+          "threat_id": "CAPEC-4242"
+        },
+        {
+          "target": "doc_to_pixels.py",
+          "threat_id": "CAPEC-4243"
+        }
+      ],
+      "flows": [
+        {
+          "id": "req_untrusted_doc",
+          "name":"Request untrusted doc from remote source",
+          "source": "actors.USER",
+          "sink": "external.DOC_SOURCE"
+        },
+        {
+          "id": "recv_untrusted_doc",
+          "name":"Receive untrusted doc from remote source and store it locally",
+          "source": "external.DOC_SOURCE",
+          "isResponse": true,
+          "responseTo": "req_untrusted_doc",
+          "sink": "datastores.HOST"
+        }
+      ]
+    }
+  ]
+}
