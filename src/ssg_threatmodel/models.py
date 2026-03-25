@@ -83,11 +83,13 @@ class ThreatModel(BaseModel):
 def analyze_data(model: ThreatModel):
     """Analyze the threat model and return useful statistics."""
 
-    # Count threat frequency
+    # Count threat frequency (only findings against linked components)
     threat_counter = Counter()
     for scenario in model.scenarios:
+        linked = scenario.linked_component_names
         for finding in scenario.findings:
-            threat_counter[finding.threat_id] += 1
+            if finding.target in linked:
+                threat_counter[finding.threat_id] += 1
 
     threats_by_frequency = threat_counter.most_common()
 
