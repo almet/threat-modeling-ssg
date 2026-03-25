@@ -1,0 +1,23 @@
+[build-system]
+requires = ["uv_build>=0.5,<0.12"]
+build-backend = "uv_build"
+
+[project]
+name = "ssg-threatmodel"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "jinja2>=3",
+    "pydantic>=2",
+]
+
+[project.scripts]
+ssg-threatmodel = "ssg_threatmodel.cli:main"
+
+[tool.uv.build-backend]
+module-name = "ssg_threatmodel"
+
+[tool.uv.build-backend.wheel]
+artifacts = [
+    "src/ssg_threatmodel/templates/assets/*.js",
+]

@@ -44,68 +44,10 @@
 </div>
 {% endif %}
 
-<details>
-<summary>Show data flows</summary>
-<table>
-    <thead>
-        <tr>
-            <th>Flow ID</th>
-            <th>Source</th>
-            <th>Sink</th>
-            <th>Type</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for flow in scenario.flows %}
-        <tr>
-            <td>{{ loop.index }}. {{ flow.id }}</td>
-            <td>{{ flow.source }}</td>
-            <td>{{ flow.sink }}</td>
-            <td>
-                {% if flow.is_response %}
-                Response to {{ flow.response_to }}
-                {% else %}
-                Request
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-</details>
+{% include "includes/flows_table.html" %}
 
 <h2>Applicable CAPEC Threats</h2>
-{% if scenario.findings %}
-<table>
-    <thead>
-        <tr>
-            <th>Threat ID</th>
-            <th>Name</th>
-            <th>Target Component</th>
-            <th>Description</th>
-            <th>Mitigations</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for finding in scenario.findings %}
-        {% set threat = model.threats[finding.threat_id] %}
-        <tr>
-            <td><a href="threat_{{ finding.threat_id }}.html">{{ finding.threat_id }}</a></td>
-            <td>{{ threat.name }}</td>
-            <td><a href="component_{{ finding.target | slugify }}.html">{{ finding.target }}</a></td>
-            <td>{{ threat.description }}</td>
-            <td>
-                {% for prop in threat.mapping.mitigations %}
-                <span class="tag tag--true">{{ prop | replace('_', ' ') }}</span>
-                {% endfor %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p>No threats identified for this scenario.</p>
-{% endif %}
+{% include "includes/findings_table.html" %}
 
 <p><a href="index.html">Back to Summary</a></p>
 {% endblock %}

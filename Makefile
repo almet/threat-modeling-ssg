@@ -1,7 +1,7 @@
-build: templates/assets/viz-global.js templates/assets/mermaid.min.js
-	uv run --with pydantic --with jinja2 generate.py
+build: src/ssg_threatmodel/templates/assets/viz-global.js src/ssg_threatmodel/templates/assets/mermaid.min.js
+	uv run ssg-threatmodel
 
-templates/assets/viz-global.js templates/assets/mermaid.min.js: package.json
+src/ssg_threatmodel/templates/assets/viz-global.js src/ssg_threatmodel/templates/assets/mermaid.min.js: package.json
 	npm install && npm run install-assets
 
 regenerate:

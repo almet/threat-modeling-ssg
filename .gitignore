@@ -1,4 +1,4 @@
 node_modules/
 output/
 data.json
-templates/assets/*.js
+src/ssg_threatmodel/templates/assets/*.js
