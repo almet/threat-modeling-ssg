@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ data.label }} - Threat Model{% endblock %}
+
+{% block content %}
+<h1>Property: {{ data.label }}</h1>
+
+<h2>Threats mitigated by this property</h2>
+{% if data.mitigated_threats %}
+<ul class="prop-list">
+    {% for tid, threat in data.mitigated_threats %}
+    <li>
+        <a href="threat_{{ tid }}.html">{{ tid }}</a>
+        <span class="prop-meta">{{ threat.name }}</span>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p><em>None.</em></p>
+{% endif %}
+
+<h2>Threats that would be mitigated by this property</h2>
+{% if data.would_be_mitigated_threats %}
+<ul class="prop-list">
+    {% for tid, threat in data.would_be_mitigated_threats %}
+    <li>
+        <a href="threat_{{ tid }}.html">{{ tid }}</a>
+        <span class="prop-meta">{{ threat.name }}</span>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p><em>None.</em></p>
+{% endif %}
+
+<h2>Components that would benefit</h2>
+{% if data.benefit_components %}
+<ul class="prop-list">
+    {% for comp in data.benefit_components %}
+    <li>
+        <a href="component_{{ comp.name | slugify }}.html">{{ comp.name }}</a>
+        <span class="prop-meta">{{ comp.comp.component_class }}{% if comp.comp.inBoundary %} · {{ comp.comp.inBoundary }}{% endif %}</span>
+        {% if comp.current_value is sameas false %}
+        <span class="badge badge-false">missing</span>
+        {% else %}
+        <span class="badge badge-false">unknown</span>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p><em>None.</em></p>
+{% endif %}
+
+<p><a href="index.html">Back to Summary</a></p>
+{% endblock %}

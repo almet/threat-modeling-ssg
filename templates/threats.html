@@ -8,8 +8,8 @@
 
 <h2>Threats by Severity</h2>
 <div class="mermaid">
-pie
-    {% for severity, count in analysis.severity_distribution %}
+pie showData
+    {% for severity, count in analysis.severity_distribution.items() %}
     "{{ severity or "Unknown" }}" : {{ count }}
     {% endfor %}
 </div>

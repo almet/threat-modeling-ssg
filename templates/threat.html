@@ -13,7 +13,7 @@
 
 
 <div class="stats">
-    <div class="count-box count-box--{{ threat.severity.lower() }}">
+    <div class="count-box count-box--{{ threat.severity.lower().replace(' ', '-') }}">
         <div class="count-box__value">{{ threat.severity }}</div>
         <div class="count-box__label">Severity</div>
     </div>

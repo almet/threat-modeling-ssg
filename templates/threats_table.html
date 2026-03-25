@@ -1,18 +1,35 @@
 {% if model.threats %}
+{% set severity_order = ['Very High', 'High', 'Medium', 'Low', 'Unknown'] %}
+{% set col_span = all_threat_props | length + 1 %}
 <div class="prop-table-wrap">
 <table class="prop-table">
     <thead>
         <tr>
             <th class="prop-sticky">Threats</th>
             {% for prop in all_threat_props %}
-            <th class="prop-col"><div>{{ prop | replace('_', ' ') | replace('!', 'not ') | title }}</div></th>
+            <th class="prop-col">
+                <div>
+                    <a href="property_{{ prop | slugify }}.html">{{ prop | replace('_', ' ') | replace('!', 'not ') | title }}</a>
+                </div>
+            </th>
             {% endfor %}
         </tr>
     </thead>
     <tbody>
-        {% for threat_id, threat in model.threats.items() %}
-        <tr>
-            <td class="prop-sticky" title="{{ threat_id }}: {{ threat.name }}">
+        {% for severity in severity_order %}
+        {% set ns = namespace(printed=false) %}
+        {% for threat_id, threat in model.threats | dictsort %}
+        {% set threat_severity = threat.severity or "Unknown" %}
+        {% if threat_severity == severity %}
+        {% if not ns.printed %}
+        <tr class="prop-severity-row">
+            <th colspan="{{ col_span }}">{{ severity }}</th>
+        </tr>
+        {% set ns.printed = true %}
+        {% endif %}
+        {% set is_active = threat_id in analysis.threat_counter %}
+        <tr{% if is_active %} class="prop-threat-active"{% endif %}>
+            <td class="prop-sticky{% if is_active %} prop-sticky--active{% endif %}" title="{{ threat_id }}: {{ threat.name }}">
                 <a href="threat_{{ threat_id }}.html">{{ threat_id }}</a>
                 <div class="prop-meta">{{ threat.name | truncate(40) }}</div>
             </td>
@@ -31,6 +48,8 @@
             {% endif %}
             {% endfor %}
         </tr>
+        {% endif %}
+        {% endfor %}
         {% endfor %}
     </tbody>
 </table>

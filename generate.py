@@ -132,14 +132,19 @@ def analyze_data(model: ThreatModel):
             if scenario.name not in components_to_scenarios[finding.target]:
                 components_to_scenarios[finding.target].append(scenario.name)
 
-    # Severity distribution in a fixed display order
-    severity_order = ["Very High", "High", "Medium", "Low"]
-    severity_counter = Counter(threat.severity for threat in model.threats.values())
-    severity_distribution = [
-        (s, severity_counter[s]) for s in severity_order if severity_counter[s]
-    ] + [
-        (s, c) for s, c in severity_counter.items() if s not in severity_order and c
-    ]
+    # Severity distribution — only threats that actually appear in findings
+    severity_order = ["Very High", "High", "Medium", "Low", "Unknown"]
+    severity_counter = Counter(
+        model.threats[tid].severity or "Unknown"
+        for tid in threat_counter
+        if tid in model.threats
+    )
+    severity_distribution = {
+        s: severity_counter[s] for s in severity_order if severity_counter[s]
+    }
+    for s, c in severity_counter.items():
+        if s not in severity_distribution and c:
+            severity_distribution[s] = c
 
     return {
         "threat_counter": threat_counter,
@@ -388,6 +393,83 @@ def main():
         for prop in threat.mapping.requirements + threat.mapping.mitigations
     })
 
+    # Compute all properties present on components for property pages
+    component_props = sorted({
+        prop
+        for component in model.components.values()
+        for prop in component.properties.keys()
+    })
+    all_property_keys = sorted(set(all_threat_props) | set(component_props))
+
+    # Build per-property detail data (based on current findings)
+    active_threat_ids = [
+        tid for tid in analysis["threat_counter"].keys() if tid in model.threats
+    ]
+    props_detail = {}
+    for prop in all_property_keys:
+        label = prop.replace("_", " ").replace("!", "not ").title()
+        prop_slug = re.sub(r"[^\w]", "_", prop)
+
+        mitigated_threats = []
+        would_be_mitigated_threats = []
+        benefit_components = {}
+
+        for tid in active_threat_ids:
+            threat = model.threats[tid]
+            if prop not in threat.mapping.mitigations:
+                continue
+
+            affected_components = analysis["threats_to_components"].get(tid, set())
+            if not affected_components:
+                mitigated_threats.append((tid, threat))
+                continue
+
+            missing_components = []
+            for comp_name in affected_components:
+                comp = model.components.get(comp_name)
+                if not comp:
+                    continue
+                if comp.properties.get(prop) is not True:
+                    missing_components.append(comp_name)
+
+            if missing_components:
+                would_be_mitigated_threats.append((tid, threat))
+                for comp_name in missing_components:
+                    comp = model.components.get(comp_name)
+                    if not comp:
+                        continue
+                    entry = benefit_components.setdefault(
+                        comp_name,
+                        {
+                            "name": comp_name,
+                            "comp": comp,
+                            "current_value": comp.properties.get(prop),
+                            "threats": [],
+                        },
+                    )
+                    entry["threats"].append((tid, threat))
+            else:
+                mitigated_threats.append((tid, threat))
+
+        mitigated_threats.sort(key=lambda item: item[0])
+        would_be_mitigated_threats.sort(key=lambda item: item[0])
+
+        benefit_components_list = list(benefit_components.values())
+        benefit_components_list.sort(
+            key=lambda item: (
+                0 if item["current_value"] is False else 1,
+                item["name"].lower(),
+            )
+        )
+
+        props_detail[prop] = {
+            "label": label,
+            "slug": prop_slug,
+            "mitigated_threats": mitigated_threats,
+            "would_be_mitigated_threats": would_be_mitigated_threats,
+            "benefit_components": benefit_components_list,
+        }
+
     # Generate index page
     print("Generating index.html...")
     template = env.get_template("summary.html")
@@ -476,6 +558,13 @@ def main():
     template = env.get_template("components.html")
     html = template.render(config=config, model=model, analysis=analysis)
     (output_dir / "components.html").write_text(html)
+
+    # Generate individual property pages
+    print(f"Generating {len(props_detail)} property pages...")
+    prop_template = env.get_template("property.html")
+    for prop, data in props_detail.items():
+        html = prop_template.render(config=config, prop=prop, data=data)
+        (output_dir / f"property_{data['slug']}.html").write_text(html)
 
     # Generate scenario pages
     print(f"Generating {len(model.scenarios)} scenario pages...")

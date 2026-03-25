@@ -6,7 +6,11 @@
         <tr>
             <th class="prop-sticky">Components</th>
             {% for key in prop_keys %}
-            <th class="prop-col"><div>{{ key | replace('_', ' ') | title }}</div></th>
+            <th class="prop-col">
+                <div>
+                    <a href="property_{{ key | slugify }}.html">{{ key | replace('_', ' ') | replace('!', 'not ') | title }}</a>
+                </div>
+            </th>
             {% endfor %}
         </tr>
     </thead>
