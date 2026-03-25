@@ -204,9 +204,9 @@ def generate_mermaid(scenario: Scenario) -> str:
     for name in participants:
         lines.append(f"    participant {alias(name)} as {name}")
     lines.append("")
-    for flow in scenario.flows:
+    for i, flow in enumerate(scenario.flows, 1):
         arrow = "-->>" if flow.is_response else "->>"
-        lines.append(f"    {alias(flow.source)}{arrow}{alias(flow.sink)}: {flow.id}")
+        lines.append(f"    {alias(flow.source)}{arrow}{alias(flow.sink)}: {i}. {flow.id}")
 
     return "\n".join(lines)
 
@@ -241,7 +241,11 @@ def generate_dfd(scenario: Scenario) -> str:
         return "\\n".join(lines)
 
     boundaries = {c.name: c for c in scenario.components if c.component_class == "Boundary"}
-    nodes      = [c for c in scenario.components if c.component_class != "Boundary"]
+    all_nodes  = [c for c in scenario.components if c.component_class != "Boundary"]
+
+    # Filter out components not linked to any flow
+    linked_names = {flow.source for flow in scenario.flows} | {flow.sink for flow in scenario.flows}
+    nodes = [c for c in all_nodes if c.name in linked_names]
 
     # Build boundary nesting tree
     boundary_children: dict = defaultdict(list)
@@ -273,7 +277,14 @@ def generate_dfd(scenario: Scenario) -> str:
             "",
         ])
 
+    def boundary_has_content(name: str) -> bool:
+        if nodes_by_boundary.get(name):
+            return True
+        return any(boundary_has_content(child) for child in boundary_children.get(name, []))
+
     def emit_boundary(name: str, indent: str = "    ") -> None:
+        if not boundary_has_content(name):
+            return
         lines.extend([
             f"{indent}subgraph cluster_boundary_{slug(name)} {{",
             f"{indent}    graph [",
@@ -319,11 +330,11 @@ def generate_dfd(scenario: Scenario) -> str:
     for comp in nodes:
         name_to_id.setdefault(comp.name, node_id(comp))
 
-    for flow in scenario.flows:
+    for i, flow in enumerate(scenario.flows, 1):
         src = name_to_id.get(flow.source)
         snk = name_to_id.get(flow.sink)
         if src and snk:
-            label = wrap_label(flow.id, width=20).replace('"', '\\"')
+            label = wrap_label(f"{i}. {flow.id}", width=20).replace('"', '\\"')
             lines.extend([
                 f"    {src} -> {snk} [",
                 f"        color = black;",

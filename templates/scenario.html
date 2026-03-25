@@ -58,7 +58,7 @@
     <tbody>
         {% for flow in scenario.flows %}
         <tr>
-            <td>{{ flow.id }}</td>
+            <td>{{ loop.index }}. {{ flow.id }}</td>
             <td>{{ flow.source }}</td>
             <td>{{ flow.sink }}</td>
             <td>
