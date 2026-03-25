@@ -2,3 +2,4 @@ node_modules/
 output/
 data.json
 src/ssg_threatmodel/templates/assets/*.js
+*.pyc
