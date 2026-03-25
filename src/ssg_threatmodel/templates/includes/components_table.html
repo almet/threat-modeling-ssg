@@ -17,6 +17,7 @@
     <tbody>
         {% set ns = namespace(current_class=None) %}
         {% for comp_name, component in model.components | sort_by_class %}
+        {% if component.component_class not in config.hide_components_with_category %}
         {% if component.component_class != ns.current_class %}
         {% set ns.current_class = component.component_class %}
         <tr class="prop-section-row">
@@ -34,6 +35,7 @@
 	    {% set label = key | replace('_', ' ') | title %}{% if val is sameas true %}<td class="prop-cell prop-true" data-tooltip="{{ comp_name }} · {{ label }} = true">✓</td>{% elif val is sameas false %}<td class="prop-cell prop-false" data-tooltip="{{ comp_name }} · {{ label }} = false">✗</td>{% else %}<td class="prop-cell" data-tooltip="{{ comp_name }} · {{ label }} = {{ val }}">{{ val }}</td>{% endif %}
             {% endfor %}
         </tr>
+        {% endif %}
         {% endfor %}
     </tbody>
 </table>

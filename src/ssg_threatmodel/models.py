@@ -8,6 +8,7 @@ class SiteConfig(BaseModel):
     title: str = "Threat Model Report"
     logo: Optional[str] = None
     github_repo: Optional[str] = None
+    hide_components_with_category: List[str] = []
 
 
 class ThreatMapping(BaseModel):
