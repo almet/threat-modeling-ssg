@@ -1,9 +1,3 @@
-"""
-Generate threat model HTML reports from data.json
-
-Usage: ssg-threatmodel
-"""
-
 import re
 import shutil
 import tomllib
@@ -11,8 +5,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from .graph_dfd import generate_dfd, generate_highlighted_dfd
-from .graph_sequence import generate_mermaid
+from .graphs import generate_dataflow, generate_highlighted_dataflow, generate_sequence
 from .models import SiteConfig, ThreatModel, analyze_data
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -42,11 +35,15 @@ def main():
 
     analysis = analyze_data(model)
 
-    # Setup Jinja2
+    # Setup Jinja2 and its filters
     env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
     env.filters["basename"] = lambda p: Path(p).name
     env.filters["slugify"] = lambda s: re.sub(r"[^\w]", "_", s)
-    env.filters["sort_by_class"] = lambda d: sorted(d.items(), key=lambda x: x[1].component_class)
+
+    # FIXME: These are a bit hackish, but work.
+    env.filters["sort_by_class"] = lambda d: sorted(
+        d.items(), key=lambda x: x[1].component_class
+    )
     env.filters["implemented"] = lambda d: sorted(
         ((k, v) for k, v in d.items() if v is not False),
         key=lambda item: 0 if not isinstance(item[1], bool) else 1,
@@ -60,29 +57,33 @@ def main():
         if config.github_repo and scenario.file:
             scenario.url = f"{config.github_repo}/blob/main/{scenario.file}"
         if not scenario.dfd and scenario.components:
-            scenario.dfd = generate_dfd(scenario)
-        scenario.mermaid = generate_mermaid(scenario)
+            scenario.dfd = generate_dataflow(scenario)
+        scenario.mermaid = generate_sequence(scenario)
 
     copy_assets(output_dir / "assets")
 
     # Compute all unique properties across all threat mappings
-    all_threat_props = sorted({
-        prop
-        for threat in model.threats.values()
-        for prop in threat.mapping.requirements + threat.mapping.mitigations
-    })
+    all_threat_props = sorted(
+        {
+            prop
+            for threat in model.threats.values()
+            for prop in threat.mapping.requirements + threat.mapping.mitigations
+        }
+    )
 
     # Compute all properties present on components for property pages
-    component_props = sorted({
-        prop
-        for component in model.components.values()
-        for prop in component.properties.keys()
-    })
+    component_props = sorted(
+        {
+            prop
+            for component in model.components.values()
+            for prop in component.properties
+        }
+    )
     all_property_keys = sorted(set(all_threat_props) | set(component_props))
 
     # Build per-property detail data (based on current findings)
     active_threat_ids = [
-        tid for tid in analysis["threat_counter"].keys() if tid in model.threats
+        tid for tid in analysis["threat_counter"] if tid in model.threats
     ]
     props_detail = {}
     for prop in all_property_keys:
@@ -186,21 +187,26 @@ def main():
             if scenario:
                 linked = scenario.linked_component_names
                 affected_in_scenario = [
-                    f.target for f in scenario.findings
+                    f.target
+                    for f in scenario.findings
                     if f.threat_id == threat_id and f.target in linked
                 ]
                 if not affected_in_scenario:
                     continue
                 highlighted_dfd = (
-                    generate_highlighted_dfd(scenario.dfd, set(affected_in_scenario))
+                    generate_highlighted_dataflow(
+                        scenario.dfd, set(affected_in_scenario)
+                    )
                     if scenario.dfd
                     else None
                 )
-                threat_scenario_data.append({
-                    "scenario": scenario,
-                    "affected_components": affected_in_scenario,
-                    "highlighted_dfd": highlighted_dfd,
-                })
+                threat_scenario_data.append(
+                    {
+                        "scenario": scenario,
+                        "affected_components": affected_in_scenario,
+                        "highlighted_dfd": highlighted_dfd,
+                    }
+                )
         html = template.render(
             config=config,
             threat_id=threat_id,
@@ -218,12 +224,14 @@ def main():
     template = env.get_template("component.html")
     for name, component in model.components.items():
         threat_ids = analysis["components_to_threats"].get(name, set())
-        unimplemented_mitigations = sorted({
-            prop
-            for threat_id in threat_ids
-            for prop in model.threats[threat_id].mapping.mitigations
-            if component.properties.get(prop) is False
-        })
+        unimplemented_mitigations = sorted(
+            {
+                prop
+                for threat_id in threat_ids
+                for prop in model.threats[threat_id].mapping.mitigations
+                if component.properties.get(prop) is False
+            }
+        )
         html = template.render(
             config=config,
             comp_name=name,
