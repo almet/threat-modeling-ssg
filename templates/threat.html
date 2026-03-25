@@ -131,8 +131,6 @@ Viz.instance().then(function(viz) {
     {% endif %}
     {% endfor %}
 });
-
-// Follow mouse on zoom for each DFD container
 document.querySelectorAll(".dfd-container").forEach(function(el) {
     el.addEventListener("mousemove", function(e) {
         var r = el.getBoundingClientRect();

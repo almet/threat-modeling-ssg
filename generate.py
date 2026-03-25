@@ -9,7 +9,7 @@ import shutil
 import tomllib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from collections import Counter
+from collections import Counter, defaultdict
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from jinja2 import Environment, FileSystemLoader
@@ -132,6 +132,15 @@ def analyze_data(model: ThreatModel):
             if scenario.name not in components_to_scenarios[finding.target]:
                 components_to_scenarios[finding.target].append(scenario.name)
 
+    # Severity distribution in a fixed display order
+    severity_order = ["Very High", "High", "Medium", "Low"]
+    severity_counter = Counter(threat.severity for threat in model.threats.values())
+    severity_distribution = [
+        (s, severity_counter[s]) for s in severity_order if severity_counter[s]
+    ] + [
+        (s, c) for s, c in severity_counter.items() if s not in severity_order and c
+    ]
+
     return {
         "threat_counter": threat_counter,
         "threats_by_frequency": threats_by_frequency,
@@ -139,6 +148,7 @@ def analyze_data(model: ThreatModel):
         "threats_to_scenarios": threats_to_scenarios,
         "components_to_threats": components_to_threats,
         "components_to_scenarios": components_to_scenarios,
+        "severity_distribution": severity_distribution,
     }
 
 def generate_highlighted_dfd(dfd: str, highlight_components: set) -> str:
@@ -158,7 +168,8 @@ def generate_highlighted_dfd(dfd: str, highlight_components: set) -> str:
             trailing = attrs[len(stripped):]
             attrs = (
                 f'{stripped}\n{indent}style = "filled";\n'
-                f'{indent}fillcolor = "#c0392b";\n{indent}fontcolor = "white";{trailing}'
+                f'{indent}fillcolor = "#c0392b";\n{indent}fontcolor = "white";\n'
+                f'{indent}class = "highlighted";{trailing}'
             )
         return f"{node_id} [{attrs}]"
 
@@ -195,6 +206,134 @@ def generate_mermaid(scenario: Scenario) -> str:
     return "\n".join(lines)
 
 
+def generate_dfd(scenario: Scenario) -> str:
+    """Generate a Graphviz DOT diagram from scenario components and flows."""
+
+    NODE_SHAPES = {
+        "Actor":          "square",
+        "Process":        "circle",
+        "ExternalEntity": "square",
+        "Datastore":      "cylinder",
+        "Server":         "box",
+    }
+
+    def slug(name: str) -> str:
+        return re.sub(r"[^\w]", "_", name)
+
+    def node_id(comp: Component) -> str:
+        return f"{comp.component_class.lower()}_{slug(comp.name)}_{slug(comp.inBoundary or '')}"
+
+    def wrap_label(text: str, width: int = 16) -> str:
+        words, lines, current = text.split(), [], []
+        for w in words:
+            if current and sum(len(x) for x in current) + len(current) + len(w) > width:
+                lines.append(" ".join(current))
+                current = [w]
+            else:
+                current.append(w)
+        if current:
+            lines.append(" ".join(current))
+        return "\\n".join(lines)
+
+    boundaries = {c.name: c for c in scenario.components if c.component_class == "Boundary"}
+    nodes      = [c for c in scenario.components if c.component_class != "Boundary"]
+
+    # Build boundary nesting tree
+    boundary_children: dict = defaultdict(list)
+    root_boundaries: list = []
+    for name, b in boundaries.items():
+        if b.inBoundary and b.inBoundary in boundaries:
+            boundary_children[b.inBoundary].append(name)
+        else:
+            root_boundaries.append(name)
+
+    nodes_by_boundary: dict = defaultdict(list)
+    for n in nodes:
+        nodes_by_boundary[n.inBoundary or ""].append(n)
+
+    lines: list = []
+
+    def emit_node(comp: Component, indent: str) -> None:
+        nid   = node_id(comp)
+        shape = NODE_SHAPES.get(comp.component_class, "circle")
+        label = wrap_label(comp.name)
+        lines.extend([
+            f"{indent}{nid} [",
+            f"{indent}    shape = {shape};",
+            f"{indent}    color = black;",
+            f"{indent}    fontcolor = black;",
+            f'{indent}    label = "{label}";',
+            f"{indent}    margin = 0.02;",
+            f"{indent}]",
+            "",
+        ])
+
+    def emit_boundary(name: str, indent: str = "    ") -> None:
+        lines.extend([
+            f"{indent}subgraph cluster_boundary_{slug(name)} {{",
+            f"{indent}    graph [",
+            f"{indent}        fontsize = 10;",
+            f"{indent}        fontcolor = black;",
+            f"{indent}        style = dashed;",
+            f"{indent}        color = firebrick2;",
+            f"{indent}        label = <<i>{name}</i>>;",
+            f"{indent}    ]",
+            "",
+        ])
+        for child in boundary_children.get(name, []):
+            emit_boundary(child, indent + "    ")
+        for comp in nodes_by_boundary.get(name, []):
+            emit_node(comp, indent + "    ")
+        lines.extend([f"{indent}}}", ""])
+
+    lines.extend([
+        "digraph tm {",
+        "    graph [",
+        "        fontname = Arial;",
+        "        fontsize = 14;",
+        "    ]",
+        "    node [",
+        "        fontname = Arial;",
+        "        fontsize = 14;",
+        "    ]",
+        "    edge [",
+        "        fontname = Arial;",
+        "        fontsize = 12;",
+        "    ]",
+        "    nodesep = 1;",
+        "",
+    ])
+
+    for b_name in root_boundaries:
+        emit_boundary(b_name)
+    for comp in nodes_by_boundary.get("", []):
+        emit_node(comp, "    ")
+
+    # Map component name → node id (first occurrence wins for duplicate names)
+    name_to_id: dict = {}
+    for comp in nodes:
+        name_to_id.setdefault(comp.name, node_id(comp))
+
+    for flow in scenario.flows:
+        src = name_to_id.get(flow.source)
+        snk = name_to_id.get(flow.sink)
+        if src and snk:
+            label = wrap_label(flow.id, width=20).replace('"', '\\"')
+            lines.extend([
+                f"    {src} -> {snk} [",
+                f"        color = black;",
+                f"        fontcolor = black;",
+                f"        dir = forward;",
+                f'        label = "{label}";',
+                f"    ]",
+                "",
+            ])
+
+    lines.append("}")
+    return "\n".join(lines)
+
+
+
 def load_config(filename="config.toml"):
     config_path = Path(filename)
     if config_path.exists():
@@ -223,6 +362,7 @@ def main():
     env = Environment(loader=FileSystemLoader("templates"))
     env.filters["basename"] = lambda p: Path(p).name
     env.filters["slugify"] = lambda s: re.sub(r"[^\w]", "_", s)
+    env.filters["sort_by_class"] = lambda d: sorted(d.items(), key=lambda x: x[1].component_class)
     env.filters["implemented"] = lambda d: sorted(
         ((k, v) for k, v in d.items() if v is not False),
         key=lambda item: 0 if not isinstance(item[1], bool) else 1,
@@ -235,9 +375,18 @@ def main():
     for scenario in model.scenarios:
         if config.github_repo and scenario.file:
             scenario.url = f"{config.github_repo}/blob/main/{scenario.file}"
+        if not scenario.dfd and scenario.components:
+            scenario.dfd = generate_dfd(scenario)
         scenario.mermaid = generate_mermaid(scenario)
 
     copy_assets(Path("templates/assets"), output_dir / "assets", config)
+
+    # Compute all unique properties across all threat mappings
+    all_threat_props = sorted({
+        prop
+        for threat in model.threats.values()
+        for prop in threat.mapping.requirements + threat.mapping.mitigations
+    })
 
     # Generate index page
     print("Generating index.html...")
@@ -247,9 +396,20 @@ def main():
         model=model,
         analysis=analysis,
         total_capec_threats=559,
+        all_threat_props=all_threat_props,
     )
-
     (output_dir / "index.html").write_text(html)
+
+    # Generate all-threats page
+    print("Generating threats.html...")
+    template = env.get_template("threats.html")
+    html = template.render(
+        config=config,
+        model=model,
+        analysis=analysis,
+        all_threat_props=all_threat_props,
+    )
+    (output_dir / "threats.html").write_text(html)
 
     # Build scenario lookup
     scenario_by_name = {s.name: s for s in model.scenarios}

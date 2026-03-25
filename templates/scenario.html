@@ -120,8 +120,6 @@
         svg.style.height = "auto";
         document.getElementById("dfd-container").appendChild(svg);
     });
-
-    // In order to follow the mouse when zooming in (otherwise it's in pure CSS)
     var el = document.getElementById("dfd-container");
     el.addEventListener("mousemove", function(e) {
         var r = el.getBoundingClientRect();

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}All Threats - Threat Model{% endblock %}
+
+{% block content %}
+<h1>All Threats</h1>
+
+<p>{{ model.threats | length }} CAPEC threats defined &mdash; {{ analysis.threat_counter | length }} appear in scenario findings.</p>
+
+<h2>Threats by Severity</h2>
+<div class="mermaid">
+pie
+    {% for severity, count in analysis.severity_distribution %}
+    "{{ severity or "Unknown" }}" : {{ count }}
+    {% endfor %}
+</div>
+
+{% include "threats_table.html" %}
+
+<p><a href="index.html">Back to Summary</a></p>
+{% endblock %}
+
+{% block scripts %}
+<script src="assets/mermaid.min.js"></script>
+<script>
+    (function() {
+        var v = function(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); };
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                background:       v('--color-bg'),
+                primaryColor:     v('--color-bg-container'),
+                primaryTextColor: v('--color-text'),
+                fontFamily:       "'Share Tech Mono', monospace",
+                pie1: v('--color-count-red'),
+                pie2: v('--color-count-orange'),
+                pie3: v('--color-count-blue'),
+                pie4: v('--color-count-teal'),
+                pie5: v('--color-count-grey'),
+            },
+        });
+    })();
+</script>
+{% endblock %}

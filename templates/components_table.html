@@ -11,7 +11,15 @@
         </tr>
     </thead>
     <tbody>
-        {% for comp_name, component in model.components.items() %}
+        {% set ns = namespace(current_class=None) %}
+        {% for comp_name, component in model.components | sort_by_class %}
+        {% if component.component_class != ns.current_class %}
+        {% set ns.current_class = component.component_class %}
+        <tr class="prop-section-row">
+            <td class="prop-section-cell prop-sticky">{{ component.component_class }}</td>
+            {% for _ in prop_keys %}<td class="prop-section-spacer"></td>{% endfor %}
+        </tr>
+        {% endif %}
         <tr>
             <td class="prop-sticky" title="{{ comp_name }} — {{ component.component_class }}{% if component.inBoundary %} · {{ component.inBoundary }}{% endif %}">
                 <a href="component_{{ comp_name | slugify }}.html">{{ comp_name }}</a>
@@ -28,17 +36,17 @@
 </div>
 <script>
 (function() {
-    var table = document.querySelector('.prop-table');
-    var headerRow = table.querySelector('thead tr');
-
-    table.querySelectorAll('td.prop-cell').forEach(function(cell) {
-        cell.addEventListener('mouseenter', function() {
-            cell.parentElement.cells[0].classList.add('prop-highlight');
-            headerRow.cells[cell.cellIndex].classList.add('prop-highlight');
-        });
-        cell.addEventListener('mouseleave', function() {
-            table.querySelectorAll('.prop-highlight').forEach(function(el) {
-                el.classList.remove('prop-highlight');
+    document.querySelectorAll('.prop-table').forEach(function(table) {
+        var headerRow = table.querySelector('thead tr');
+        table.querySelectorAll('td.prop-cell').forEach(function(cell) {
+            cell.addEventListener('mouseenter', function() {
+                cell.parentElement.cells[0].classList.add('prop-highlight');
+                headerRow.cells[cell.cellIndex].classList.add('prop-highlight');
+            });
+            cell.addEventListener('mouseleave', function() {
+                table.querySelectorAll('.prop-highlight').forEach(function(el) {
+                    el.classList.remove('prop-highlight');
+                });
             });
         });
     });

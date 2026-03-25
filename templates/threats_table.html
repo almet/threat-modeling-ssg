@@ -1,0 +1,38 @@
+{% if model.threats %}
+<div class="prop-table-wrap">
+<table class="prop-table">
+    <thead>
+        <tr>
+            <th class="prop-sticky">Threats</th>
+            {% for prop in all_threat_props %}
+            <th class="prop-col"><div>{{ prop | replace('_', ' ') | replace('!', 'not ') | title }}</div></th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for threat_id, threat in model.threats.items() %}
+        <tr>
+            <td class="prop-sticky" title="{{ threat_id }}: {{ threat.name }}">
+                <a href="threat_{{ threat_id }}.html">{{ threat_id }}</a>
+                <div class="prop-meta">{{ threat.name | truncate(40) }}</div>
+            </td>
+            {% for prop in all_threat_props %}
+            {% set is_req = prop in threat.mapping.requirements %}
+            {% set is_mit = prop in threat.mapping.mitigations %}
+            {% set label = prop | replace('_', ' ') | replace('!', 'not ') | title %}
+            {% if is_req and is_mit %}
+            <td class="prop-cell prop-req" data-tooltip="{{ threat_id }} · {{ label }} = requirement + mitigation">R/M</td>
+            {% elif is_req %}
+            <td class="prop-cell prop-req" data-tooltip="{{ threat_id }} · {{ label }} = requirement">R</td>
+            {% elif is_mit %}
+            <td class="prop-cell prop-mit" data-tooltip="{{ threat_id }} · {{ label }} = mitigation">✓</td>
+            {% else %}
+            <td class="prop-cell prop-false"></td>
+            {% endif %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}

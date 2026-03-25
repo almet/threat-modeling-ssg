@@ -283,7 +283,6 @@ nav a:hover {
 
 /* Component properties table */
 .prop-table-wrap {
-    overflow-x: auto;
     margin: 0 0 20px 0;
 }
 
@@ -341,6 +340,8 @@ nav a:hover {
 
 .prop-true  { background-color: var(--color-prop-true); }
 .prop-false { background-color: var(--color-prop-false); }
+.prop-req   { background-color: var(--color-count-orange); }
+.prop-mit   { background-color: var(--color-prop-true); }
 
 .prop-cell {
     position: relative;
@@ -366,7 +367,7 @@ nav a:hover {
     box-shadow: var(--color-glow);
 }
 
-.prop-cell:hover::after {
+.prop-cell[data-tooltip]:not([data-tooltip=""]):hover::after {
     opacity: 1;
 }
 
@@ -384,6 +385,58 @@ nav a:hover {
     font-size: 0.75em;
     color: var(--color-text-dim);
     margin-top: 3px;
+}
+
+/* DFD theming — CSS overrides SVG presentation attributes */
+.dfd-container svg { background: var(--color-bg-container); }
+.dfd-container svg .graph > polygon { fill: var(--color-bg-container); stroke: transparent; }
+.dfd-container svg .cluster > polygon,
+.dfd-container svg .cluster > path { fill: transparent; stroke: var(--color-accent); }
+.dfd-container svg .cluster text { fill: var(--color-text-dim); }
+.dfd-container svg .node ellipse,
+.dfd-container svg .node polygon,
+.dfd-container svg .node rect { fill: var(--color-bg-header); stroke: var(--color-text-dim); }
+.dfd-container svg .node text { fill: var(--color-text); }
+.dfd-container svg .node.highlighted ellipse,
+.dfd-container svg .node.highlighted polygon,
+.dfd-container svg .node.highlighted rect { fill: #c0392b; stroke: #c0392b; }
+.dfd-container svg .node.highlighted text { fill: white; }
+.dfd-container svg .edge path { stroke: var(--color-text-dim); fill: none; }
+.dfd-container svg .edge polygon { fill: var(--color-text-dim); stroke: var(--color-text-dim); }
+.dfd-container svg .edge text { fill: var(--color-text-dim); }
+.dfd-container svg text { font-family: "Share Tech Mono", monospace; }
+
+.prop-section-row:hover {
+    background-color: transparent;
+}
+
+.prop-section-cell {
+    font-family: 'VT323', monospace;
+    font-size: 1.4em;
+    color: var(--color-accent);
+    text-shadow: var(--color-glow);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: var(--color-bg-header) !important;
+    border-top: 2px solid var(--color-border);
+    padding: 6px 12px;
+}
+
+.prop-section-spacer {
+    background: var(--color-bg-header);
+    border-top: 2px solid var(--color-border);
+}
+
+.section-link {
+    font-size: 0.55em;
+    font-weight: normal;
+    vertical-align: middle;
+    margin-left: 0.75em;
+    opacity: 0.7;
+}
+
+.section-link:hover {
+    opacity: 1;
 }
 
 table {
@@ -628,4 +681,63 @@ a.count-box:hover {
     max-height: 60px;
     display: block;
     margin-bottom: 10px;
+}
+
+.severity-chart {
+    margin: 16px 0 24px 0;
+    max-width: 520px;
+}
+
+.severity-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 6px 0;
+}
+
+.severity-label {
+    width: 72px;
+    text-align: right;
+    font-size: 0.85em;
+    color: var(--color-text-dim);
+    flex-shrink: 0;
+}
+
+.severity-track {
+    flex: 1;
+    height: 26px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.severity-fill {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    min-width: 32px;
+    transition: width 0.4s ease;
+}
+
+.severity-count {
+    font-size: 0.85em;
+    font-weight: bold;
+    color: var(--color-1);
+}
+
+.severity-fill--very-high { background: var(--color-count-red);    box-shadow: inset 0 0 8px var(--color-count-red-glow); }
+.severity-fill--high      { background: var(--color-count-orange); box-shadow: inset 0 0 8px var(--color-count-orange-glow); }
+.severity-fill--medium    { background: var(--color-count-blue);   box-shadow: inset 0 0 8px var(--color-count-blue-glow); }
+.severity-fill--low       { background: var(--color-count-teal);   box-shadow: inset 0 0 8px var(--color-count-teal-glow); }
+.severity-fill--unknown   { background: var(--color-count-grey); }
+
+footer {
+    text-align: center;
+    padding: 16px;
+    color: var(--color-text-dim);
+    border-top: 1px solid var(--color-border);
+    margin-top: 20px;
+    opacity: 0.6;
 }

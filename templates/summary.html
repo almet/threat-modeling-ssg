@@ -4,10 +4,11 @@
 
 {% block content %}
 <div class="stats">
-    <div class="count-box count-box--red">
-        <div class="count-box__value">{{ model.threats | length }}</div>
-        <div class="count-box__label">Threats</div>
-    </div>
+    <a href="/threats.html" class="count-box count-box--red">
+        <div class="count-box__value">{{ analysis.threat_counter | length }}</div>
+        <div class="count-box__note">of {{ model.threats | length }} defined</div>
+        <div class="count-box__label">Threats affecting us</div>
+    </a>
     <div class="count-box count-box--orange">
         <div class="count-box__value">{{ model.scenarios | length }}</div>
         <div class="count-box__label">Scenarios</div>
@@ -16,16 +17,11 @@
         <div class="count-box__value">{{ model.components | length }}</div>
         <div class="count-box__label">Components</div>
     </div>
-    <div class="count-box count-box--teal">
-        <div class="count-box__value">{{ "%.1f" | format((model.threats | length / total_capec_threats * 100)) }}%</div>
-        <div class="count-box__note">{{ model.threats | length }} of {{ total_capec_threats }}</div>
-        <div class="count-box__label">CAPEC threats affecting us</div>
-    </div>
 </div>
 
 {% include "components_table.html" %}
 
-<h2>CAPEC Threats by Frequency</h2>
+<h2>CAPEC Threats by Frequency <a href="threats.html" class="section-link">See all threats →</a></h2>
 <table>
     <thead>
         <tr>
