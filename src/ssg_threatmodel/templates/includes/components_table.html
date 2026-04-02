@@ -1,5 +1,5 @@
 {% if model.components %}
-{% set prop_keys = model.components.values() | first | attr('properties') | list %}
+{% set prop_keys = model.properties | list %}
 <div class="prop-table-wrap">
 <table class="prop-table">
     <thead>
@@ -31,8 +31,14 @@
                 <div class="prop-meta">{{ component.component_class }}{% if component.inBoundary %} · {{ component.inBoundary }}{% endif %}</div>
             </td>
             {% for key in prop_keys %}
-            {% set val = component.properties[key] %}
-	    {% set label = key | replace('_', ' ') | title %}{% if val is sameas true %}<td class="prop-cell prop-true" data-tooltip="{{ comp_name }} · {{ label }} = true">✓</td>{% elif val is sameas false %}<td class="prop-cell prop-false" data-tooltip="{{ comp_name }} · {{ label }} = false">✗</td>{% else %}<td class="prop-cell" data-tooltip="{{ comp_name }} · {{ label }} = {{ val }}">{{ val }}</td>{% endif %}
+            {% set val = component.get_property(key) %}
+	    {% set label = key | replace('_', ' ') | title %}
+	    {% if val is sameas true %}
+	    	<td class="prop-cell prop-true" data-tooltip="{{ comp_name }} · {{ label }} = true">✓</td>
+	    {% elif val is sameas false %}
+	    	<td class="prop-cell prop-false" data-tooltip="{{ comp_name }} · {{ label }} = false">✗</td>
+	    {% else %}
+	        <td class="prop-cell prop-true" data-tooltip="{{ comp_name }} · {{ label }} = {{ val }}">*</td>{% endif %}
             {% endfor %}
         </tr>
         {% endif %}

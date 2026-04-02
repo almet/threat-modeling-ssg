@@ -1,39 +1,43 @@
 from collections import Counter
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class SiteConfig(BaseModel):
     title: str = "Threat Model Report"
-    logo: Optional[str] = None
-    github_repo: Optional[str] = None
-    hide_components_with_category: List[str] = []
+    logo: str | None = None
+    github_repo: str | None = None
+    hide_components_with_category: list[str] = []
 
 
 class ThreatMapping(BaseModel):
-    requirements: List[str] = []
-    mitigations: List[str] = []
+    requirements: list[str] = []
+    mitigations: list[str] = []
 
 
 class Threat(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     SID: str
-    name: str = Field(alias="description")
-    description: str = Field(alias="details", default="")
+    comment: str = ""
+    description: str = ""
+    details: str = ""
+    example: str = ""
     severity: str = ""
-    likelihood_of_attack: str = Field(alias="Likelihood Of Attack", default="")
+    likelihood: str = ""
     mapping: ThreatMapping = Field(default_factory=ThreatMapping)
-    target: List[str] = []
 
 
 class Component(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     name: str = ""
     component_class: str = Field(alias="class", default="")
-    description: str = ""
-    inBoundary: Optional[str] = Field(alias="in_boundary", default=None)
-    properties: Dict[str, Any] = {}
+    description: str | None = ""
+    inBoundary: str | None = Field(alias="in_boundary", default=None)
+    properties: dict[str, Any] = {}
+
+    def get_property(self, name):
+        return self.properties.get(name, False)
 
 
 class Finding(BaseModel):
@@ -43,24 +47,23 @@ class Finding(BaseModel):
 
 class Flow(BaseModel):
     id: str
-    description: str = ""
-    source: str
-    sink: str
+    name: str
     is_response: bool = False
-    response_to: Optional[str] = None
+    response_to: str | None = None
+    sink: str
+    source: str
 
 
 class Scenario(BaseModel):
-    name: str
     description: str = ""
-    findings: List[Finding] = []
-    flows: List[Flow] = []
-    components: List[Component] = []
-    dfd: Optional[str] = None
-    file: Optional[str] = None
-    seq: Optional[Any] = None
-    url: Optional[str] = None
-    mermaid: Optional[str] = None
+    name: str
+    file: str
+    findings: list[Finding] = []
+    flows: list[Flow] = []
+    components: list[str] = []
+    dfd: str = ""
+    mermaid: str = ""
+    url: str | None = None
 
     @property
     def linked_component_names(self) -> set:
@@ -68,10 +71,17 @@ class Scenario(BaseModel):
         return {flow.source for flow in self.flows} | {flow.sink for flow in self.flows}
 
 
+class Property(BaseModel):
+    description: str = ""
+    name: str
+    type: str
+
+
 class ThreatModel(BaseModel):
-    threats: Dict[str, Threat]
-    components: Dict[str, Component]
-    scenarios: List[Scenario]
+    threats: dict[str, Threat]
+    components: dict[str, Component]
+    scenarios: list[Scenario]
+    properties: dict[str, Property]
 
     @model_validator(mode="before")
     @classmethod

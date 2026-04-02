@@ -1,16 +1,24 @@
 {% extends "base.html" %}
 
-{% block title %}{{ threat_id }}: {{ threat.name }} - Threat Model{% endblock %}
+{% block title %}{{ threat_id }}: {{ threat.description }} - Threat Model{% endblock %}
 
 {% block content %}
 <h1>
 	<a href="https://capec.mitre.org/data/definitions/{{ threat_id.replace('CAPEC-', '') }}.html">
-	{{ threat_id }}: {{ threat.name }}
+	{{ threat_id }}: {{ threat.description }}
 	</a>
 </h1>
 
-<p>{{ threat.description }}</p>
+<p>{{ threat.details }}</p>
 
+{% if threat.example %}
+<h2>Examples</h2>
+<p>{{ threat.example }}</p>
+{% endif %}
+{% if threat.comment %}
+<h2>Comment</h2>
+<p>{{ threat.comment }}</p>
+{% endif %}
 
 <div class="stats">
     <div class="count-box count-box--{{ threat.severity.lower().replace(' ', '-') }}">
@@ -34,7 +42,7 @@
 
 <h2>Requirements and Mitigations</h2>
 <div class="stats">
-    <div class="card" style="flex: 1; margin: 5px;">
+    <div class="card">
         <h3>Requirements</h3>
         <p>Component properties that must be true for this threat to apply:</p>
         <div class="tag-list">
@@ -45,7 +53,7 @@
             {% endfor %}
         </div>
     </div>
-    <div class="card" style="flex: 1; margin: 5px;">
+    <div class="card">
         <h3>Mitigations</h3>
         <p>Component properties that mitigate this threat:</p>
         <div class="tag-list">

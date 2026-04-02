@@ -3,7 +3,8 @@
 <table>
     <thead>
         <tr>
-            <th>Flow ID</th>
+            <th>ID</th>
+            <th>Name</th>
             <th>Source</th>
             <th>Sink</th>
             <th>Type</th>
@@ -12,7 +13,8 @@
     <tbody>
         {% for flow in scenario.flows %}
         <tr>
-            <td>{{ loop.index }}. {{ flow.id }}</td>
+	    <td>{{ loop.index }}</td>
+            <td>{{ flow.name }}</td>
             <td>{{ flow.source }}</td>
             <td>{{ flow.sink }}</td>
             <td>

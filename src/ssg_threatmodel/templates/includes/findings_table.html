@@ -3,9 +3,8 @@
     <thead>
         <tr>
             <th>Threat ID</th>
-            <th>Name</th>
-            <th>Target Component</th>
             <th>Description</th>
+            <th>Target Component</th>
             <th>Mitigations</th>
         </tr>
     </thead>
@@ -14,9 +13,8 @@
         {% set threat = model.threats[finding.threat_id] %}
         <tr>
             <td><a href="threat_{{ finding.threat_id }}.html">{{ finding.threat_id }}</a></td>
-            <td>{{ threat.name }}</td>
-            <td><a href="component_{{ finding.target | slugify }}.html">{{ finding.target }}</a></td>
             <td>{{ threat.description }}</td>
+            <td><a href="component_{{ finding.target | slugify }}.html">{{ finding.target }}</a></td>
             <td>
                 {% for prop in threat.mapping.mitigations %}
                 <span class="tag tag--true">{{ prop | replace('_', ' ') }}</span>

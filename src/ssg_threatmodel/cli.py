@@ -30,7 +30,7 @@ def copy_assets(assets_dst):
 def main():
     config = load_config()
 
-    with open("data.json") as f:
+    with open("report.json") as f:
         model = ThreatModel.model_validate_json(f.read())
 
     analysis = analyze_data(model)
@@ -56,40 +56,21 @@ def main():
     for scenario in model.scenarios:
         if config.github_repo and scenario.file:
             scenario.url = f"{config.github_repo}/blob/main/{scenario.file}"
-        if not scenario.dfd and scenario.components:
-            scenario.dfd = generate_dataflow(scenario)
+        scenario.dfd = generate_dataflow(scenario, model.components)
         scenario.mermaid = generate_sequence(scenario)
 
     copy_assets(output_dir / "assets")
-
-    # Compute all unique properties across all threat mappings
-    all_threat_props = sorted(
-        {
-            prop
-            for threat in model.threats.values()
-            for prop in threat.mapping.requirements + threat.mapping.mitigations
-        }
-    )
-
-    # Compute all properties present on components for property pages
-    component_props = sorted(
-        {
-            prop
-            for component in model.components.values()
-            for prop in component.properties
-        }
-    )
-    all_property_keys = sorted(set(all_threat_props) | set(component_props))
 
     # Build per-property detail data (based on current findings)
     active_threat_ids = [
         tid for tid in analysis["threat_counter"] if tid in model.threats
     ]
-    props_detail = {}
-    for prop in all_property_keys:
-        label = prop.replace("_", " ").replace("!", "not ").title()
-        prop_slug = re.sub(r"[^\w]", "_", prop)
 
+    all_threat_props = list(model.properties.keys())
+
+    props_detail = {}
+    for prop in model.properties:
+        prop_slug = re.sub(r"[^\w]", "_", prop)
         mitigated_threats = []
         would_be_mitigated_threats = []
         benefit_components = {}
@@ -143,7 +124,7 @@ def main():
         )
 
         props_detail[prop] = {
-            "label": label,
+            "label": model.properties[prop].name,
             "slug": prop_slug,
             "mitigated_threats": mitigated_threats,
             "would_be_mitigated_threats": would_be_mitigated_threats,
@@ -269,5 +250,25 @@ def main():
         (output_dir / f"scenario_{scenario.name.replace(' ', '_')}.html").write_text(
             html
         )
+
+    # Generate mapping generator page
+    print("Generating generator.html...")
+    threats_data = {
+        tid: {"name": t.description, "description": t.details}
+        for tid, t in model.threats.items()
+    }
+    threats_sorted = sorted(
+        model.threats.items(),
+        key=lambda kv: int(re.search(r"\d+", kv[0]).group()),
+    )
+    template = env.get_template("generator.html")
+    html = template.render(
+        config=config,
+        model=model,
+        all_threat_props=all_threat_props,
+        threats_data=threats_data,
+        threats_sorted=threats_sorted,
+    )
+    (output_dir / "generator.html").write_text(html)
 
     print(f"\nDone! Generated files in {output_dir}/")

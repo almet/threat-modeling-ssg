@@ -44,8 +44,8 @@
         {% set threat = model.threats[threat_id] %}
         <tr>
             <td><a href="threat_{{ threat_id }}.html">{{ threat_id }}</a></td>
-            <td>{{ threat.name }}</td>
             <td>{{ threat.description }}</td>
+            <td>{{ threat.details }}</td>
             <td>
                 {% for prop in threat.mapping.mitigations %}
                 {% if component.properties.get(prop) is sameas false %}

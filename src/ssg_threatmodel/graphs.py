@@ -18,7 +18,7 @@ NODE_SHAPES = {
 }
 
 
-def generate_dataflow(scenario: Scenario) -> str:
+def generate_dataflow(scenario: Scenario, components: dict[str, Component]) -> str:
     """Generate a Graphviz DOT diagram from scenario components and flows."""
 
     def slug(name: str) -> str:
@@ -40,13 +40,22 @@ def generate_dataflow(scenario: Scenario) -> str:
         return "\\n".join(lines)
 
     boundaries = {
-        c.name: c for c in scenario.components if c.component_class == "Boundary"
+        name: comp
+        for name, comp in components.items()
+        if comp.component_class == "Boundary"
     }
-    all_nodes = [c for c in scenario.components if c.component_class != "Boundary"]
-
+    all_nodes = {
+        name: comp
+        for name, comp in components.items()
+        if name in scenario.linked_component_names
+        and comp.component_class != "Boundary"
+    }
     # Filter out components not linked to any flow
-    linked_names = scenario.linked_component_names
-    nodes = [c for c in all_nodes if c.name in linked_names]
+    nodes = [
+        node
+        for name, node in all_nodes.items()
+        if name in scenario.linked_component_names
+    ]
 
     # Build boundary nesting tree
     boundary_children: dict = defaultdict(list)
@@ -135,7 +144,6 @@ def generate_dataflow(scenario: Scenario) -> str:
     for component in nodes_by_boundary.get("", []):
         emit_node(component, "    ")
 
-    # Map componentonent name to node id (first occurrence wins for duplicate names)
     name_to_id: dict = {}
     for component in nodes:
         name_to_id.setdefault(component.name, node_id(component))
@@ -144,7 +152,7 @@ def generate_dataflow(scenario: Scenario) -> str:
         src = name_to_id.get(flow.source)
         snk = name_to_id.get(flow.sink)
         if src and snk:
-            label = wrap_label(f"{i}. {flow.id}", width=20).replace('"', '\\"')
+            label = wrap_label(f"{i}. {flow.name}", width=20).replace('"', '\\"')
             lines.extend(
                 [
                     (
@@ -186,7 +194,7 @@ def generate_highlighted_dataflow(dfd: str, highlight_components: set) -> str:
         return f"{node_id} [{attrs}]"
 
     pattern = re.compile(
-        r"\b((?:process|actor|datastore|externalentity|boundary)_\w+)\s*\[([^\[\]]+)\]",
+        r"\b((?:\w+)_\w+)\s*\[([^\[\]]+)\]",
         re.DOTALL,
     )
     return pattern.sub(highlighter, dfd)
@@ -214,7 +222,7 @@ def generate_sequence(scenario: Scenario) -> str:
     for i, flow in enumerate(scenario.flows, 1):
         arrow = "-->>" if flow.is_response else "->>"
         lines.append(
-            f"    {alias(flow.source)}{arrow}{alias(flow.sink)}: {i}. {flow.id}"
+            f"    {alias(flow.source)}{arrow}{alias(flow.sink)}: {i}. {flow.name}"
         )
 
     return "\n".join(lines)

@@ -11,7 +11,7 @@
     {% for tid, threat in data.mitigated_threats %}
     <li>
         <a href="threat_{{ tid }}.html">{{ tid }}</a>
-        <span class="prop-meta">{{ threat.name }}</span>
+        <span class="prop-meta">{{ threat.description }}</span>
     </li>
     {% endfor %}
 </ul>
@@ -25,7 +25,7 @@
     {% for tid, threat in data.would_be_mitigated_threats %}
     <li>
         <a href="threat_{{ tid }}.html">{{ tid }}</a>
-        <span class="prop-meta">{{ threat.name }}</span>
+        <span class="prop-meta">{{ threat.description }}</span>
     </li>
     {% endfor %}
 </ul>

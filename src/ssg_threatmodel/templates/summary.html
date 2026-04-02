@@ -26,7 +26,7 @@
     <thead>
         <tr>
             <th>Threat ID</th>
-            <th>Name</th>
+            <th>Description</th>
             <th>Severity</th>
             <th>Occurrences</th>
         </tr>
@@ -37,7 +37,7 @@
         {% set pct = (count / max_count * 100) | int %}
         <tr>
             <td><a href="threat_{{ threat_id }}.html">{{ threat_id }}</a></td>
-            <td>{{ model.threats[threat_id].name }}</td>
+            <td>{{ model.threats[threat_id].description }}</td>
             <td>{{ model.threats[threat_id].severity }}</td>
             <td class="freq-cell" style="background: linear-gradient(to right, var(--color-7) {{ pct }}%, transparent {{ pct }}%)">{{ count }}</td>
         </tr>

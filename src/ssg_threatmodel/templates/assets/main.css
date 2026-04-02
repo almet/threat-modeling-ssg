@@ -34,6 +34,7 @@
     --color-border:           var(--color-3);
     --color-text:             var(--color-8);
     --color-text-dim:         var(--color-7);
+    --color-text-dim2:         var(--color-6);
     --color-text-header:      var(--color-8);
     --color-accent:           var(--color-6);
     --color-accent-visited:   var(--color-5);
@@ -168,7 +169,6 @@ header {
     filter: drop-shadow(0 0 8px var(--color-accent));
 }
 
-/* Theme toggle */
 .theme-toggle {
     cursor: pointer;
     display: flex;
@@ -423,10 +423,10 @@ nav a:hover {
 .dfd-container svg .node.highlighted polygon,
 .dfd-container svg .node.highlighted rect { fill: #c0392b; stroke: #c0392b; }
 .dfd-container svg .node.highlighted text { fill: white; }
-.dfd-container svg .edge path { stroke: var(--color-text-dim); fill: none; }
+.dfd-container svg .edge path { stroke: var(--color-text-dim2); fill: none; }
 .dfd-container svg .edge polygon { fill: var(--color-text-dim); stroke: var(--color-text-dim); }
 .dfd-container svg .edge text { fill: var(--color-text-dim); }
-.dfd-container svg text { font-family: "Share Tech Mono", monospace; }
+/* .dfd-container svg text { font-family: "Share Tech Mono", monospace; } */
 
 .prop-section-row:hover {
     background-color: transparent;
@@ -566,7 +566,7 @@ tr:hover {
 }
 
 .mermaid-container svg text {
-    font-size: 20px !important;
+    font-size: 14px !important;
     font-family: 'Share Tech Mono', monospace !important;
 }
 
@@ -616,9 +616,10 @@ details summary:hover {
 .card {
     border: 1px solid var(--color-border);
     padding: 15px;
-    margin: 15px 0;
+    margin: 15px;
     border-radius: 5px;
     background-color: var(--color-bg-header);
+    flex: 1;
 }
 
 .card h3 {
@@ -763,4 +764,108 @@ footer {
     border-top: 1px solid var(--color-border);
     margin-top: 20px;
     opacity: 0.6;
+}
+
+#gen-toml {
+    width: 100%;
+    min-height: 320px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85em;
+    background: var(--color-bg-container);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    padding: 12px;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+/* ── Generator tooltip ──────────────────────────────────────────────────── */
+
+#gen-tooltip {
+    display: none;
+    position: fixed;
+    z-index: 200;
+    max-width: 360px;
+    background: var(--color-bg-header);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.82em;
+    pointer-events: none;
+    box-shadow: var(--color-glow);
+    line-height: 1.55;
+}
+
+.gen-tip-id   { font-family: 'Share Tech Mono', monospace; font-size: 0.9em; color: var(--color-text-dim); }
+.gen-tip-name { font-weight: bold; margin: 2px 0 6px; }
+.gen-tip-desc { border-top: 1px solid var(--color-border); padding-top: 6px; color: var(--color-text-dim); }
+
+/* ── Generator TOML output ──────────────────────────────────────────────── */
+
+#gen-toml {
+    width: 100%;
+    min-height: 280px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85em;
+    background: var(--color-bg-container);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    padding: 14px 16px;
+    box-sizing: border-box;
+    overflow-x: auto;
+    white-space: pre;
+    border-radius: 4px;
+    line-height: 1.6;
+}
+
+.toml-section { color: var(--color-accent);    font-weight: bold; }
+.toml-comment { color: var(--color-text-dim);  font-style: italic; }
+.toml-key     { color: var(--color-prop-true); }
+.toml-string  { color: var(--color-count-orange); }
+
+#gen-copy {
+    float: right;
+    font-size: 0.75em;
+    padding: 2px 10px;
+    cursor: pointer;
+    background: var(--color-bg-container);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+}
+#gen-copy:hover { background: var(--color-bg-hover); }
+
+/* ── Generator import ───────────────────────────────────────────────────── */
+
+#gen-import {
+    margin-bottom: 1.2rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 0 12px;
+}
+
+#gen-import[open] { padding-bottom: 10px; }
+
+#gen-import summary {
+    padding: 8px 0;
+    cursor: pointer;
+    color: var(--color-text-dim);
+    font-size: 0.9em;
+    user-select: none;
+}
+
+#gen-paste {
+    width: 100%;
+    height: 140px;
+    margin-top: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.82em;
+    background: var(--color-bg-container);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    padding: 10px 12px;
+    box-sizing: border-box;
+    resize: vertical;
+    border-radius: 4px;
 }

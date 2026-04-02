@@ -29,9 +29,9 @@
         {% endif %}
         {% set is_active = threat_id in analysis.threat_counter %}
         <tr{% if is_active %} class="prop-threat-active"{% endif %}>
-            <td class="prop-sticky{% if is_active %} prop-sticky--active{% endif %}" title="{{ threat_id }}: {{ threat.name }}">
+            <td class="prop-sticky{% if is_active %} prop-sticky--active{% endif %}" title="{{ threat_id }}: {{ threat.description }}">
                 <a href="threat_{{ threat_id }}.html">{{ threat_id }}</a>
-                <div class="prop-meta">{{ threat.name | truncate(40) }}</div>
+                <div class="prop-meta">{{ threat.description | truncate(40) }}</div>
             </td>
             {% for prop in all_threat_props %}
             {% set is_req = prop in threat.mapping.requirements %}
