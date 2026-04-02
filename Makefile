@@ -9,3 +9,6 @@ regenerate:
 
 serve:
 	python -m http.server -d output
+
+test:
+	PYTHONPATH=src uv run pytest

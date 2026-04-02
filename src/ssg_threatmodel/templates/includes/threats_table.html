@@ -34,15 +34,18 @@
                 <div class="prop-meta">{{ threat.description | truncate(40) }}</div>
             </td>
             {% for prop in all_threat_props %}
-            {% set is_req = prop in threat.mapping.requirements %}
-            {% set is_mit = prop in threat.mapping.mitigations %}
-            {% set label = prop | replace('_', ' ') | replace('!', 'not ') | title %}
+            {% set req_tokens = threat.mapping.requirements_for_prop(prop) %}
+            {% set mit_tokens = threat.mapping.mitigations_for_prop(prop) %}
+            {% set is_req = req_tokens | length > 0 %}
+            {% set is_mit = mit_tokens | length > 0 %}
+            {% set req_dotted = is_req and prop not in threat.mapping.requirements %}
+            {% set mit_dotted = is_mit and prop not in threat.mapping.mitigations %}
             {% if is_req and is_mit %}
-            <td class="prop-cell prop-req" data-tooltip="{{ threat_id }} · {{ label }} = requirement + mitigation">R/M</td>
+            <td class="prop-cell prop-req" data-tooltip="{{ threat_id }} · {{ req_tokens | join(', ') }} (req) · {{ mit_tokens | join(', ') }} (mit)">R{% if req_dotted %}*{% endif %}/M{% if mit_dotted %}*{% endif %}</td>
             {% elif is_req %}
-            <td class="prop-cell prop-req" data-tooltip="{{ threat_id }} · {{ label }} = requirement">R</td>
+            <td class="prop-cell prop-req" data-tooltip="{{ threat_id }} · {{ req_tokens | join(', ') }} = requirement">R{% if req_dotted %}*{% endif %}</td>
             {% elif is_mit %}
-            <td class="prop-cell prop-mit" data-tooltip="{{ threat_id }} · {{ label }} = mitigation">✓</td>
+            <td class="prop-cell prop-mit" data-tooltip="{{ threat_id }} · {{ mit_tokens | join(', ') }} = mitigation">{% if mit_dotted %}M*{% else %}✓{% endif %}</td>
             {% else %}
             <td class="prop-cell prop-false"></td>
             {% endif %}
