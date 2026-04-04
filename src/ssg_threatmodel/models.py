@@ -1,5 +1,5 @@
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -165,55 +165,24 @@ class ThreatModel(BaseModel):
         if self._analysis is not None:
             return self._analysis
 
-        # Count threat frequency (only findings against linked components)
-        threat_counter = Counter()
+        threat_counter: Counter[str] = Counter()
+        threats_to_components: defaultdict[str, set[str]] = defaultdict(set)
+        threats_to_scenarios: defaultdict[str, list[str]] = defaultdict(list)
+        components_to_threats: defaultdict[str, set[str]] = defaultdict(set)
+        components_to_scenarios: defaultdict[str, list[str]] = defaultdict(list)
+
         for scenario in self.scenarios:
             linked = scenario.linked_component_names
             for finding in scenario.findings:
-                if finding.target in linked:
-                    threat_counter[finding.threat_id] += 1
-
-        threats_by_frequency = threat_counter.most_common()
-
-        # Map threats to components (only linked ones)
-        threats_to_components = {}
-        for scenario in self.scenarios:
-            linked = scenario.linked_component_names
-            for finding in scenario.findings:
-                if finding.target not in linked:
-                    continue
-                if finding.threat_id not in threats_to_components:
-                    threats_to_components[finding.threat_id] = set()
-                threats_to_components[finding.threat_id].add(finding.target)
-
-        # Map threats to scenarios (only those with at least one linked affected component)
-        threats_to_scenarios = {}
-        for scenario in self.scenarios:
-            linked = scenario.linked_component_names
-            for finding in scenario.findings:
-                if finding.target not in linked:
-                    continue
-                if finding.threat_id not in threats_to_scenarios:
-                    threats_to_scenarios[finding.threat_id] = []
-                if scenario.name not in threats_to_scenarios[finding.threat_id]:
-                    threats_to_scenarios[finding.threat_id].append(scenario.name)
-
-        # Map components to threats
-        components_to_threats = {}
-        for scenario in self.scenarios:
-            for finding in scenario.findings:
-                if finding.target not in components_to_threats:
-                    components_to_threats[finding.target] = set()
-                components_to_threats[finding.target].add(finding.threat_id)
-
-        # Map components to scenarios
-        components_to_scenarios = {}
-        for scenario in self.scenarios:
-            for finding in scenario.findings:
-                if finding.target not in components_to_scenarios:
-                    components_to_scenarios[finding.target] = []
-                if scenario.name not in components_to_scenarios[finding.target]:
-                    components_to_scenarios[finding.target].append(scenario.name)
+                tid, target = finding.threat_id, finding.target
+                components_to_threats[target].add(tid)
+                if scenario.name not in components_to_scenarios[target]:
+                    components_to_scenarios[target].append(scenario.name)
+                if target in linked:
+                    threat_counter[tid] += 1
+                    threats_to_components[tid].add(target)
+                    if scenario.name not in threats_to_scenarios[tid]:
+                        threats_to_scenarios[tid].append(scenario.name)
 
         # Severity distribution — only threats that actually appear in findings
         severity_order = ["Very High", "High", "Medium", "Low", "Unknown"]
@@ -231,11 +200,11 @@ class ThreatModel(BaseModel):
 
         self._analysis = {
             "threat_counter": threat_counter,
-            "threats_by_frequency": threats_by_frequency,
-            "threats_to_components": threats_to_components,
-            "threats_to_scenarios": threats_to_scenarios,
-            "components_to_threats": components_to_threats,
-            "components_to_scenarios": components_to_scenarios,
+            "threats_by_frequency": threat_counter.most_common(),
+            "threats_to_components": dict(threats_to_components),
+            "threats_to_scenarios": dict(threats_to_scenarios),
+            "components_to_threats": dict(components_to_threats),
+            "components_to_scenarios": dict(components_to_scenarios),
             "severity_distribution": severity_distribution,
         }
         return self._analysis
