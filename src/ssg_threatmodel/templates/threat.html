@@ -126,6 +126,7 @@
 {% block scripts %}
 {% set has_dfd = threat_scenario_data | selectattr("highlighted_dfd") | list | length > 0 %}
 {% if has_dfd %}
+{% include "includes/zoom.html" %}
 <script src="assets/viz-global.js"></script>
 <script>
 Viz.instance().then(function(viz) {
@@ -140,14 +141,7 @@ Viz.instance().then(function(viz) {
     {% endif %}
     {% endfor %}
 });
-document.querySelectorAll(".dfd-container").forEach(function(el) {
-    el.addEventListener("mousemove", function(e) {
-        var r = el.getBoundingClientRect();
-        el.style.transformOrigin =
-            ((e.clientX - r.left) / r.width * 100).toFixed(1) + "% " +
-            ((e.clientY - r.top)  / r.height * 100).toFixed(1) + "%";
-    });
-});
+document.querySelectorAll(".dfd-container").forEach(enableZoom);
 </script>
 {% endif %}
 {% endblock %}

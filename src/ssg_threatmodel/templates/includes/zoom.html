@@ -1,0 +1,10 @@
+<script>
+function enableZoom(el) {
+    el.addEventListener("mousemove", function(e) {
+        var r = el.getBoundingClientRect();
+        el.style.transformOrigin =
+            ((e.clientX - r.left) / r.width * 100).toFixed(1) + "% " +
+            ((e.clientY - r.top) / r.height * 100).toFixed(1) + "%";
+    });
+}
+</script>

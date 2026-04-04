@@ -53,6 +53,7 @@
 {% endblock %}
 
 {% block scripts %}
+{% include "includes/zoom.html" %}
 {% if scenario.dfd %}
 <script src="assets/viz-global.js"></script>
 <script>
@@ -62,53 +63,39 @@
         svg.style.height = "auto";
         document.getElementById("dfd-container").appendChild(svg);
     });
-    var el = document.getElementById("dfd-container");
-    el.addEventListener("mousemove", function(e) {
-        var r = el.getBoundingClientRect();
-        el.style.transformOrigin =
-            ((e.clientX - r.left) / r.width * 100).toFixed(1) + "% " +
-            ((e.clientY - r.top)  / r.height * 100).toFixed(1) + "%";
-    });
+    enableZoom(document.getElementById("dfd-container"));
 </script>
 {% endif %}
 {% if scenario.mermaid %}
 <script src="assets/mermaid.min.js"></script>
 <script>
     (function() {
-        var s = getComputedStyle(document.documentElement);
-        var v = function(name) { return s.getPropertyValue(name).trim(); };
+        var v = function(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); };
         mermaid.initialize({
             startOnLoad: true,
             theme: 'base',
             themeVariables: {
-                background:        v('--color-bg'),
-                primaryColor:      v('--color-bg-header'),
-                primaryTextColor:  v('--color-text'),
-                primaryBorderColor:v('--color-border'),
-                lineColor:         v('--color-accent'),
-                secondaryColor:    v('--color-bg-container'),
-                tertiaryColor:     v('--color-bg-hover'),
-                noteBkgColor:      v('--color-bg-hover'),
-                noteTextColor:     v('--color-text'),
-                activationBkgColor:v('--color-bg-hover'),
-                actorBkg:          v('--color-bg-header'),
-                actorBorder:       v('--color-border'),
-                actorTextColor:    v('--color-text'),
-                actorLineColor:    v('--color-border'),
-                signalColor:       v('--color-text-dim'),
-                signalTextColor:   v('--color-text-dim'),
-                fontFamily:        "'Share Tech Mono', monospace",
+                background:         v('--color-bg'),
+                primaryColor:       v('--color-bg-header'),
+                primaryTextColor:   v('--color-text'),
+                primaryBorderColor: v('--color-border'),
+                lineColor:          v('--color-accent'),
+                secondaryColor:     v('--color-bg-container'),
+                tertiaryColor:      v('--color-bg-hover'),
+                noteBkgColor:       v('--color-bg-hover'),
+                noteTextColor:      v('--color-text'),
+                activationBkgColor: v('--color-bg-hover'),
+                actorBkg:           v('--color-bg-header'),
+                actorBorder:        v('--color-border'),
+                actorTextColor:     v('--color-text'),
+                actorLineColor:     v('--color-border'),
+                signalColor:        v('--color-text-dim'),
+                signalTextColor:    v('--color-text-dim'),
+                fontFamily:         "'Share Tech Mono', monospace",
             },
         });
     })();
-
-    var mc = document.getElementById("mermaid-container");
-    mc.addEventListener("mousemove", function(e) {
-        var r = mc.getBoundingClientRect();
-        mc.style.transformOrigin =
-            ((e.clientX - r.left) / r.width  * 100).toFixed(1) + "% " +
-            ((e.clientY - r.top)  / r.height * 100).toFixed(1) + "%";
-    });
+    enableZoom(document.getElementById("mermaid-container"));
 </script>
 {% endif %}
 {% endblock %}
