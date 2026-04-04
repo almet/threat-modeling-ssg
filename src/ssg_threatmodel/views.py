@@ -91,23 +91,10 @@ def component_view(
     analysis = model.analyze()
     for name, component in model.components.items():
         threat_ids = analysis["components_to_threats"].get(name, set())
-        unimplemented_mitigations = model.component_unimplemented_mitigations(
-            component, threat_ids
-        )
-        scenario_names = []
-        seen = set()
-        for scenario in model.scenarios:
-            if name not in scenario.linked_component_names and name not in scenario.components:
-                continue
-            if scenario.name in seen:
-                continue
-            seen.add(scenario.name)
-            scenario_names.append(scenario.name)
-        threat_unimplemented = {
-            tid: model.threat_unimplemented_mitigations(component, model.threats[tid])
-            for tid in threat_ids
-            if tid in model.threats
-        }
+        scenario_names = list(dict.fromkeys(
+            s.name for s in model.scenarios
+            if name in s.linked_component_names or name in s.components
+        ))
         yield {
             "config": config,
             "model": model,
@@ -115,8 +102,11 @@ def component_view(
             "component": component,
             "threats": threat_ids,
             "scenarios": scenario_names,
-            "unimplemented_mitigations": unimplemented_mitigations,
-            "threat_unimplemented": threat_unimplemented,
+            "unimplemented_mitigations": model.component_unimplemented_mitigations(component, threat_ids),
+            "threat_unimplemented": {
+                tid: model.threat_unimplemented_mitigations(component, model.threats[tid])
+                for tid in threat_ids if tid in model.threats
+            },
             "component_name": slugify(name),
         }
 
@@ -140,35 +130,28 @@ def property_view(
 ) -> Iterable[dict[str, Any]]:
     analysis = model.analyze()
     for prop_key, prop in model.properties.items():
-        display_label = (
-            prop_key.replace("_", " ").replace("!", "not ").title()
-        )
         mitigated_threats, would_be_mitigated_threats, benefit_components = (
             model.property_mitigation_state(prop_key)
         )
         requiring_threats = sorted(
-            [
-                (tid, threat)
-                for tid, threat in model.threats.items()
-                if tid in analysis["threat_counter"]
-                and prop_key in threat.mapping.requirement_props
-            ],
-            key=lambda item: item[0],
+            ((tid, t) for tid, t in model.threats.items()
+             if tid in analysis["threat_counter"] and prop_key in t.mapping.requirement_props),
+            key=lambda x: x[0],
         )
-        data = {
-            "label": prop.name,
-            "display_label": display_label,
-            "slug": slugify(prop_key),
-            "mitigated_threats": mitigated_threats,
-            "would_be_mitigated_threats": would_be_mitigated_threats,
-            "benefit_components": benefit_components,
-            "requiring_threats": requiring_threats,
-        }
+        slug = slugify(prop_key)
         yield {
             "config": config,
             "prop": prop_key,
-            "data": data,
-            "prop_slug": data["slug"],
+            "prop_slug": slug,
+            "data": {
+                "label": prop.name,
+                "display_label": prop_key.replace("_", " ").replace("!", "not ").title(),
+                "slug": slug,
+                "mitigated_threats": mitigated_threats,
+                "would_be_mitigated_threats": would_be_mitigated_threats,
+                "benefit_components": benefit_components,
+                "requiring_threats": requiring_threats,
+            },
         }
 
 
