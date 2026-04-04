@@ -23,20 +23,20 @@ pie showData
 <script src="assets/mermaid.min.js"></script>
 <script>
     (function() {
-        var v = function(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); };
+        var getCssVar = function(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); };
         mermaid.initialize({
             startOnLoad: true,
             theme: 'base',
             themeVariables: {
-                background:       v('--color-bg'),
-                primaryColor:     v('--color-bg-container'),
-                primaryTextColor: v('--color-text'),
+                background:       getCssVar('--color-bg'),
+                primaryColor:     getCssVar('--color-bg-container'),
+                primaryTextColor: getCssVar('--color-text'),
                 fontFamily:       "'Share Tech Mono', monospace",
-                pie1: v('--color-count-red'),
-                pie2: v('--color-count-orange'),
-                pie3: v('--color-count-blue'),
-                pie4: v('--color-count-teal'),
-                pie5: v('--color-count-grey'),
+                pie1: getCssVar('--color-count-red'),
+                pie2: getCssVar('--color-count-orange'),
+                pie3: getCssVar('--color-count-blue'),
+                pie4: getCssVar('--color-count-teal'),
+                pie5: getCssVar('--color-count-grey'),
             },
         });
     })();

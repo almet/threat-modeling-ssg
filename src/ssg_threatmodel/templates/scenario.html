@@ -70,27 +70,27 @@
 <script src="assets/mermaid.min.js"></script>
 <script>
     (function() {
-        var v = function(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); };
+        var getCssVar = function(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); };
         mermaid.initialize({
             startOnLoad: true,
             theme: 'base',
             themeVariables: {
-                background:         v('--color-bg'),
-                primaryColor:       v('--color-bg-header'),
-                primaryTextColor:   v('--color-text'),
-                primaryBorderColor: v('--color-border'),
-                lineColor:          v('--color-accent'),
-                secondaryColor:     v('--color-bg-container'),
-                tertiaryColor:      v('--color-bg-hover'),
-                noteBkgColor:       v('--color-bg-hover'),
-                noteTextColor:      v('--color-text'),
-                activationBkgColor: v('--color-bg-hover'),
-                actorBkg:           v('--color-bg-header'),
-                actorBorder:        v('--color-border'),
-                actorTextColor:     v('--color-text'),
-                actorLineColor:     v('--color-border'),
-                signalColor:        v('--color-text-dim'),
-                signalTextColor:    v('--color-text-dim'),
+                background:         getCssVar('--color-bg'),
+                primaryColor:       getCssVar('--color-bg-header'),
+                primaryTextColor:   getCssVar('--color-text'),
+                primaryBorderColor: getCssVar('--color-border'),
+                lineColor:          getCssVar('--color-accent'),
+                secondaryColor:     getCssVar('--color-bg-container'),
+                tertiaryColor:      getCssVar('--color-bg-hover'),
+                noteBkgColor:       getCssVar('--color-bg-hover'),
+                noteTextColor:      getCssVar('--color-text'),
+                activationBkgColor: getCssVar('--color-bg-hover'),
+                actorBkg:           getCssVar('--color-bg-header'),
+                actorBorder:        getCssVar('--color-border'),
+                actorTextColor:     getCssVar('--color-text'),
+                actorLineColor:     getCssVar('--color-border'),
+                signalColor:        getCssVar('--color-text-dim'),
+                signalTextColor:    getCssVar('--color-text-dim'),
                 fontFamily:         "'Share Tech Mono', monospace",
             },
         });
