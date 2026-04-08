@@ -21,8 +21,8 @@
 {% endif %}
 
 <div class="stats">
-    <div class="count-box count-box--{{ threat.severity.lower().replace(' ', '-') }}">
-        <div class="count-box__value">{{ threat.severity }}</div>
+    <div class="count-box count-box--{{ (threat.severity or 'Unknown').lower().replace(' ', '-') }}">
+        <div class="count-box__value">{{ threat.severity or "Unknown" }}</div>
         <div class="count-box__label">Severity</div>
     </div>
     <div class="count-box count-box--red">

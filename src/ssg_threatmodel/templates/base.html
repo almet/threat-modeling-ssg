@@ -22,6 +22,8 @@
                     <a href="index.html">Summary</a>
                     <a href="threats.html">Threats</a>
                     <a href="components.html">Components</a>
+                    <a href="threats_components.html">Matrix</a>
+                    <a href="stats.html">Stats</a>
                     <a href="generator.html">Generator</a>
                 </nav>
             </div>
@@ -49,6 +51,7 @@
                 var theme = input.checked ? 'light' : 'dark';
                 root.setAttribute('data-theme', theme);
                 localStorage.setItem('theme', theme);
+                document.dispatchEvent(new CustomEvent('theme-changed'));
             });
         })();
     </script>

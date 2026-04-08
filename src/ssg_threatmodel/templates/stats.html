@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Stats - Threat Model{% endblock %}
+
+{% block content %}
+<h1>Stats</h1>
+
+<div class="stats">
+    <div class="count-box count-box--red">
+        <div class="count-box__value">{{ analysis.threat_counter | length }}</div>
+        <div class="count-box__note">of {{ model.threats | length }} defined</div>
+        <div class="count-box__label">Active Threats</div>
+    </div>
+    <div class="count-box count-box--orange">
+        <div class="count-box__value">{{ model.scenarios | length }}</div>
+        <div class="count-box__label">Scenarios</div>
+    </div>
+    <div class="count-box count-box--blue">
+        <div class="count-box__value">{{ model.components | length }}</div>
+        <div class="count-box__label">Components</div>
+    </div>
+    <div class="count-box count-box--teal">
+        <div class="count-box__value">{{ model.properties | length }}</div>
+        <div class="count-box__label">Properties</div>
+    </div>
+</div>
+
+<h2>Threats by Severity</h2>
+<div class="mermaid">
+pie showData
+    {% for severity, count in analysis.severity_distribution.items() %}
+    "{{ severity or "Unknown" }}" : {{ count }}
+    {% endfor %}
+</div>
+
+<div class="severity-chart">
+    {% set max_sev = analysis.severity_distribution.values() | max %}
+    {% for severity, count in analysis.severity_distribution.items() %}
+    {% set pct = (count / max_sev * 100) | int %}
+    <div class="severity-row">
+        <span class="severity-label">{{ severity or "Unknown" }}</span>
+        <div class="severity-track">
+            <div class="severity-fill severity-fill--{{ (severity or 'unknown') | lower | replace(' ', '-') }}" style="width: {{ pct }}%">
+                <span class="severity-count">{{ count }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<h2>Mitigation Coverage</h2>
+<div class="stats">
+    <div class="count-box count-box--teal">
+        <div class="count-box__value">{{ mitigated }}</div>
+        <div class="count-box__label">Mitigated</div>
+    </div>
+    <div class="count-box count-box--red">
+        <div class="count-box__value">{{ unmitigated }}</div>
+        <div class="count-box__label">Not Mitigated</div>
+    </div>
+</div>
+{% if total_pairs %}
+<p>{{ mitigated }} of {{ total_pairs }} threat-component pairs have at least one mitigation in place ({{ (mitigated / total_pairs * 100) | round(1) }}%).</p>
+{% endif %}
+
+<h2>Most Affected Components</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Component</th>
+            <th>Threats</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for comp_name, count in most_affected_components %}
+        <tr>
+            <td><a href="component_{{ comp_name | slugify }}.html">{{ comp_name }}</a></td>
+            <td>{{ count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Threats by Frequency</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Threat ID</th>
+            <th>Description</th>
+            <th>Severity</th>
+            <th>Occurrences</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% set max_count = analysis.threats_by_frequency[0][1] if analysis.threats_by_frequency else 1 %}
+        {% for threat_id, count in analysis.threats_by_frequency %}
+        {% set pct = (count / max_count * 100) | int %}
+        <tr>
+            <td><a href="threat_{{ threat_id }}.html">{{ threat_id }}</a></td>
+            <td>{{ model.threats[threat_id].description }}</td>
+            <td>{{ model.threats[threat_id].severity or "Unknown" }}</td>
+            <td class="freq-cell" style="background: linear-gradient(to right, var(--color-7) {{ pct }}%, transparent {{ pct }}%)">{{ count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if unmapped_threats %}
+<h2>Threats Without Mitigations</h2>
+<p>These active threats have no mitigation mappings defined:</p>
+<ul>
+    {% for tid in unmapped_threats %}
+    <li><a href="threat_{{ tid }}.html">{{ tid }}</a>: {{ model.threats[tid].description }} ({{ model.threats[tid].severity or "Unknown" }})</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<p><a href="index.html">Back to Summary</a></p>
+{% endblock %}
+
+{% block scripts %}
+<script src="assets/mermaid.min.js"></script>
+<script>
+    (function() {
+        var el  = document.querySelector('.mermaid');
+        var src = el.textContent;
+
+        function themeVars() {
+            var v = function(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); };
+            return {
+                background:       v('--color-bg'),
+                primaryColor:     v('--color-bg-container'),
+                primaryTextColor: v('--color-text'),
+                fontFamily:       "'Share Tech Mono', monospace",
+                pie1: v('--color-count-red'),
+                pie2: v('--color-count-orange'),
+                pie3: v('--color-count-blue'),
+                pie4: v('--color-count-teal'),
+                pie5: v('--color-count-grey'),
+            };
+        }
+
+        function renderChart() {
+            mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: themeVars() });
+            el.textContent = src;
+            mermaid.run({ nodes: [el] });
+        }
+
+        renderChart();
+        document.addEventListener('theme-changed', function() {
+            setTimeout(renderChart, 50);
+        });
+    })();
+</script>
+{% endblock %}

@@ -27,7 +27,7 @@
         <tr>
             <th class="prop-sticky">Threat</th>
             {% for prop in all_threat_props %}
-            <th class="prop-col"><div>{{ prop | replace('_', ' ') | replace('!', 'not ') | title }}</div></th>
+            <th class="prop-col" style="z-index: {{ loop.revindex }}"><div>{{ prop | replace('_', ' ') | replace('!', 'not ') | title }}</div></th>
             {% endfor %}
         </tr>
     </thead>

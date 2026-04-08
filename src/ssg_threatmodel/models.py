@@ -1,5 +1,5 @@
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +44,16 @@ class Threat(BaseModel):
     severity: str = ""
     likelihood: str = ""
     mapping: ThreatMapping = Field(default_factory=ThreatMapping)
+
+    def applies_to(self, component: "Component") -> bool:
+        """True if the component has all the requirement properties for this threat."""
+        return bool(self.mapping.requirements) and all(
+            _token_satisfied(component, tok) for tok in self.mapping.requirements
+        )
+
+    def is_mitigated(self, component: "Component") -> bool:
+        """True if at least one mitigation token is satisfied by the component."""
+        return any(_token_satisfied(component, tok) for tok in self.mapping.mitigations)
 
 
 class Component(BaseModel):
@@ -95,6 +105,16 @@ class Property(BaseModel):
     name: str
     type: str
     _key: str | None = PrivateAttr(default=None)
+
+
+def _token_satisfied(component: Component, token: str) -> bool:
+    """Check if a single mitigation token (e.g. 'is_sandboxed' or 'verifies_resources.deps')
+    is satisfied by the component's properties."""
+    if "." in token:
+        prop, item = token.split(".", 1)
+        value = component.properties.get(prop)
+        return item in value if isinstance(value, list) else bool(value)
+    return bool(component.properties.get(token))
 
 
 class ThreatModel(BaseModel):
@@ -165,55 +185,24 @@ class ThreatModel(BaseModel):
         if self._analysis is not None:
             return self._analysis
 
-        # Count threat frequency (only findings against linked components)
-        threat_counter = Counter()
+        threat_counter: Counter[str] = Counter()
+        threats_to_components: defaultdict[str, set[str]] = defaultdict(set)
+        threats_to_scenarios: defaultdict[str, list[str]] = defaultdict(list)
+        components_to_threats: defaultdict[str, set[str]] = defaultdict(set)
+        components_to_scenarios: defaultdict[str, list[str]] = defaultdict(list)
+
         for scenario in self.scenarios:
             linked = scenario.linked_component_names
             for finding in scenario.findings:
-                if finding.target in linked:
-                    threat_counter[finding.threat_id] += 1
-
-        threats_by_frequency = threat_counter.most_common()
-
-        # Map threats to components (only linked ones)
-        threats_to_components = {}
-        for scenario in self.scenarios:
-            linked = scenario.linked_component_names
-            for finding in scenario.findings:
-                if finding.target not in linked:
-                    continue
-                if finding.threat_id not in threats_to_components:
-                    threats_to_components[finding.threat_id] = set()
-                threats_to_components[finding.threat_id].add(finding.target)
-
-        # Map threats to scenarios (only those with at least one linked affected component)
-        threats_to_scenarios = {}
-        for scenario in self.scenarios:
-            linked = scenario.linked_component_names
-            for finding in scenario.findings:
-                if finding.target not in linked:
-                    continue
-                if finding.threat_id not in threats_to_scenarios:
-                    threats_to_scenarios[finding.threat_id] = []
-                if scenario.name not in threats_to_scenarios[finding.threat_id]:
-                    threats_to_scenarios[finding.threat_id].append(scenario.name)
-
-        # Map components to threats
-        components_to_threats = {}
-        for scenario in self.scenarios:
-            for finding in scenario.findings:
-                if finding.target not in components_to_threats:
-                    components_to_threats[finding.target] = set()
-                components_to_threats[finding.target].add(finding.threat_id)
-
-        # Map components to scenarios
-        components_to_scenarios = {}
-        for scenario in self.scenarios:
-            for finding in scenario.findings:
-                if finding.target not in components_to_scenarios:
-                    components_to_scenarios[finding.target] = []
-                if scenario.name not in components_to_scenarios[finding.target]:
-                    components_to_scenarios[finding.target].append(scenario.name)
+                tid, target = finding.threat_id, finding.target
+                components_to_threats[target].add(tid)
+                if scenario.name not in components_to_scenarios[target]:
+                    components_to_scenarios[target].append(scenario.name)
+                if target in linked:
+                    threat_counter[tid] += 1
+                    threats_to_components[tid].add(target)
+                    if scenario.name not in threats_to_scenarios[tid]:
+                        threats_to_scenarios[tid].append(scenario.name)
 
         # Severity distribution — only threats that actually appear in findings
         severity_order = ["Very High", "High", "Medium", "Low", "Unknown"]
@@ -231,82 +220,40 @@ class ThreatModel(BaseModel):
 
         self._analysis = {
             "threat_counter": threat_counter,
-            "threats_by_frequency": threats_by_frequency,
-            "threats_to_components": threats_to_components,
-            "threats_to_scenarios": threats_to_scenarios,
-            "components_to_threats": components_to_threats,
-            "components_to_scenarios": components_to_scenarios,
+            "threats_by_frequency": threat_counter.most_common(),
+            "threats_to_components": dict(threats_to_components),
+            "threats_to_scenarios": dict(threats_to_scenarios),
+            "components_to_threats": dict(components_to_threats),
+            "components_to_scenarios": dict(components_to_scenarios),
             "severity_distribution": severity_distribution,
         }
         return self._analysis
 
-    def _mitigation_applies(
-        self, component: Component, prop_key: str, threat: Threat
-    ) -> bool:
-        def split_token(token: str) -> tuple[str, str | None]:
-            if "." in token:
-                base, item = token.split(".", 1)
-                return base, item
-            return token, None
-
-        required_items = set()
-        for req_key in threat.mapping.requirements:
-            req_prop, req_item = split_token(req_key)
-            if req_item:
-                required_items.add(req_item)
-                continue
-            req_value = component.properties.get(req_prop)
-            if isinstance(req_value, list):
-                required_items.update(req_value)
-
-        mitigation_items = set()
-        for mit_key in threat.mapping.mitigations:
-            mit_prop, mit_item = split_token(mit_key)
-            if mit_prop != prop_key:
-                continue
-            if mit_item:
-                mitigation_items.add(mit_item)
-
-        value = component.properties.get(prop_key)
-        if isinstance(value, list):
-            required = set(required_items)
-            required.update(mitigation_items)
-            if required:
-                return required.issubset(set(value))
-            return bool(value)
-        if isinstance(value, bool):
-            return value is True
-        if value is None:
-            return False
-        return bool(value)
-
     def threat_unimplemented_mitigations(
         self, component: Component, threat: Threat
     ) -> list[str]:
-        """Mitigation tokens from threat.mapping.mitigations not yet implemented by component."""
-        return [
-            mit_token
-            for mit_token in threat.mapping.mitigations
-            if not self._mitigation_applies(component, mit_token.split(".", 1)[0], threat)
-        ]
+        """Mitigation tokens from threat.mapping.mitigations not yet satisfied by component."""
+        return [tok for tok in threat.mapping.mitigations if not _token_satisfied(component, tok)]
 
     def component_unimplemented_mitigations(
         self, component: Component, threat_ids: set[str]
     ) -> list[str]:
-        missing = set()
+        missing: set[str] = set()
         for tid in threat_ids:
             threat = self.threats.get(tid)
-            if not threat:
-                continue
-            for prop_key in threat.mapping.mitigations:
-                base_prop = prop_key.split(".", 1)[0]
-                if not self._mitigation_applies(component, base_prop, threat):
-                    missing.add(base_prop)
+            if threat:
+                missing.update(
+                    tok.split(".", 1)[0]
+                    for tok in threat.mapping.mitigations
+                    if not _token_satisfied(component, tok)
+                )
         return sorted(missing)
 
     def property_mitigation_state(
         self, prop_key: str
-    ) -> tuple[list[tuple[str, Threat]], list[tuple[str, Threat]], list[dict[str, Any]]]:
+    ) -> tuple[
+        list[tuple[str, Threat]], list[tuple[str, Threat]], list[dict[str, Any]]
+    ]:
         analysis = self.analyze()
         active_threat_ids = [
             tid for tid in analysis["threat_counter"] if tid in self.threats
@@ -334,7 +281,8 @@ class ThreatModel(BaseModel):
                 comp = self.components.get(comp_name)
                 if not comp:
                     continue
-                if not self._mitigation_applies(comp, prop_key, threat):
+                tokens = threat.mapping.mitigations_for_prop(prop_key)
+                if not any(_token_satisfied(comp, tok) for tok in tokens):
                     missing_components.append(comp_name)
 
             if missing_components:

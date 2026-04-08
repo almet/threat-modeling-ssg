@@ -1,9 +1,11 @@
+import re
+from collections import Counter
 from collections.abc import Iterable
 from typing import Any
 
 from .graphs import generate_highlighted_dataflow
-from .models import SiteConfig, ThreatModel
-from .utils import view, slugify
+from .models import SiteConfig, ThreatModel, _token_satisfied
+from .utils import slugify, view
 
 
 @view("/index.html", log="Generating index.html...")
@@ -91,23 +93,13 @@ def component_view(
     analysis = model.analyze()
     for name, component in model.components.items():
         threat_ids = analysis["components_to_threats"].get(name, set())
-        unimplemented_mitigations = model.component_unimplemented_mitigations(
-            component, threat_ids
+        scenario_names = list(
+            dict.fromkeys(
+                s.name
+                for s in model.scenarios
+                if name in s.linked_component_names or name in s.components
+            )
         )
-        scenario_names = []
-        seen = set()
-        for scenario in model.scenarios:
-            if name not in scenario.linked_component_names and name not in scenario.components:
-                continue
-            if scenario.name in seen:
-                continue
-            seen.add(scenario.name)
-            scenario_names.append(scenario.name)
-        threat_unimplemented = {
-            tid: model.threat_unimplemented_mitigations(component, model.threats[tid])
-            for tid in threat_ids
-            if tid in model.threats
-        }
         yield {
             "config": config,
             "model": model,
@@ -115,8 +107,16 @@ def component_view(
             "component": component,
             "threats": threat_ids,
             "scenarios": scenario_names,
-            "unimplemented_mitigations": unimplemented_mitigations,
-            "threat_unimplemented": threat_unimplemented,
+            "unimplemented_mitigations": model.component_unimplemented_mitigations(
+                component, threat_ids
+            ),
+            "threat_unimplemented": {
+                tid: model.threat_unimplemented_mitigations(
+                    component, model.threats[tid]
+                )
+                for tid in threat_ids
+                if tid in model.threats
+            },
             "component_name": slugify(name),
         }
 
@@ -140,35 +140,34 @@ def property_view(
 ) -> Iterable[dict[str, Any]]:
     analysis = model.analyze()
     for prop_key, prop in model.properties.items():
-        display_label = (
-            prop_key.replace("_", " ").replace("!", "not ").title()
-        )
         mitigated_threats, would_be_mitigated_threats, benefit_components = (
             model.property_mitigation_state(prop_key)
         )
         requiring_threats = sorted(
-            [
-                (tid, threat)
-                for tid, threat in model.threats.items()
+            (
+                (tid, t)
+                for tid, t in model.threats.items()
                 if tid in analysis["threat_counter"]
-                and prop_key in threat.mapping.requirement_props
-            ],
-            key=lambda item: item[0],
+                and prop_key in t.mapping.requirement_props
+            ),
+            key=lambda x: x[0],
         )
-        data = {
-            "label": prop.name,
-            "display_label": display_label,
-            "slug": slugify(prop_key),
-            "mitigated_threats": mitigated_threats,
-            "would_be_mitigated_threats": would_be_mitigated_threats,
-            "benefit_components": benefit_components,
-            "requiring_threats": requiring_threats,
-        }
+        slug = slugify(prop_key)
         yield {
             "config": config,
             "prop": prop_key,
-            "data": data,
-            "prop_slug": data["slug"],
+            "prop_slug": slug,
+            "data": {
+                "label": prop.name,
+                "display_label": (
+                    prop_key.replace("_", " ").replace("!", "not ").title()
+                ),
+                "slug": slug,
+                "mitigated_threats": mitigated_threats,
+                "would_be_mitigated_threats": would_be_mitigated_threats,
+                "benefit_components": benefit_components,
+                "requiring_threats": requiring_threats,
+            },
         }
 
 
@@ -188,6 +187,116 @@ def scenario_view(
             "scenario": scenario,
             "scenario_name": scenario.name.replace(" ", "_"),
         }
+
+
+@view("/threats_components.html", log="Generating threats_components.html...")
+def threats_components_view(
+    config: SiteConfig,
+    model: ThreatModel,
+) -> dict[str, Any]:
+    analysis = model.analyze()
+
+    severity_order = {"Very High": 0, "High": 1, "Medium": 2, "Low": 3, "Unknown": 4}
+
+    def sort_key(item: tuple[str, Any]) -> tuple[int, int]:
+        tid, threat = item
+        sev = severity_order.get(threat.severity or "Unknown", 4)
+        match = re.search(r"\d+", tid)
+        return (sev, int(match.group()) if match else 0)
+
+    active_threats = sorted(
+        [
+            (tid, t)
+            for tid, t in model.threats.items()
+            if tid in analysis["threat_counter"]
+        ],
+        key=sort_key,
+    )
+
+    def _fmt(tok: str) -> str:
+        return tok.replace("_", " ").replace(".", ": ")
+
+    affected_comp_names: set[str] = set()
+    status: dict[str, dict[str, dict]] = {}
+    for tid, threat in active_threats:
+        status[tid] = {}
+        for comp_name, comp in model.components.items():
+            if threat.applies_to(comp):
+                affected_comp_names.add(comp_name)
+                satisfied = [t for t in threat.mapping.mitigations if _token_satisfied(comp, t)]
+                missing = [t for t in threat.mapping.mitigations if not _token_satisfied(comp, t)]
+                status[tid][comp_name] = {
+                    "mitigated": bool(satisfied),
+                    "satisfied": ", ".join(_fmt(t) for t in satisfied),
+                    "missing": ", ".join(_fmt(t) for t in missing),
+                }
+
+    sorted_components = sorted(
+        [
+            (name, comp)
+            for name, comp in model.components.items()
+            if name in affected_comp_names
+        ],
+        key=lambda x: (x[1].component_class, x[0]),
+    )
+
+    class_counter = Counter(
+        comp.component_class or "Other" for _, comp in sorted_components
+    )
+
+    return {
+        "config": config,
+        "active_threats": active_threats,
+        "sorted_components": sorted_components,
+        "component_classes": class_counter,
+        "status": status,
+    }
+
+
+@view("/stats.html", log="Generating stats.html...")
+def stats_view(
+    config: SiteConfig,
+    model: ThreatModel,
+) -> dict[str, Any]:
+    analysis = model.analyze()
+    active_threat_ids = set(analysis["threat_counter"])
+
+    # Mitigation coverage across all threat-component pairs
+    mitigated = 0
+    unmitigated = 0
+    for tid in active_threat_ids:
+        threat = model.threats.get(tid)
+        if not threat:
+            continue
+        for comp in model.components.values():
+            if threat.applies_to(comp):
+                if threat.is_mitigated(comp):
+                    mitigated += 1
+                else:
+                    unmitigated += 1
+
+    # Most affected components (by number of distinct threats)
+    comp_threat_counts = Counter(
+        {name: len(tids) for name, tids in analysis["components_to_threats"].items()}
+    )
+
+    # Threats with no mitigations defined
+    unmapped = sorted(
+        tid
+        for tid in active_threat_ids
+        if tid in model.threats and not model.threats[tid].mapping.mitigations
+    )
+
+    return {
+        "config": config,
+        "model": model,
+        "analysis": analysis,
+        "mitigated": mitigated,
+        "unmitigated": unmitigated,
+        "total_pairs": mitigated + unmitigated,
+        "most_affected_components": comp_threat_counts.most_common(10),
+        "unmapped_threats": unmapped,
+    }
 
 
 @view("/generator.html", log="Generating generator.html...")

@@ -75,12 +75,13 @@
 <script src="assets/mermaid.min.js"></script>
 <script>
     (function() {
-        var s = getComputedStyle(document.documentElement);
-        var v = function(name) { return s.getPropertyValue(name).trim(); };
-        mermaid.initialize({
-            startOnLoad: true,
-            theme: 'base',
-            themeVariables: {
+        var src = document.querySelector('#mermaid-container .mermaid').textContent;
+        var mc  = document.getElementById("mermaid-container");
+
+        function themeVars() {
+            var s = getComputedStyle(document.documentElement);
+            var v = function(name) { return s.getPropertyValue(name).trim(); };
+            return {
                 background:        v('--color-bg'),
                 primaryColor:      v('--color-bg-header'),
                 primaryTextColor:  v('--color-text'),
@@ -98,17 +99,31 @@
                 signalColor:       v('--color-text-dim'),
                 signalTextColor:   v('--color-text-dim'),
                 fontFamily:        "'Share Tech Mono', monospace",
-            },
+            };
+        }
+
+        function renderDiagram() {
+            mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: themeVars() });
+            mc.innerHTML = '';
+            var pre = document.createElement('pre');
+            pre.className = 'mermaid';
+            pre.textContent = src;
+            mc.appendChild(pre);
+            mermaid.run({ nodes: [pre] });
+        }
+
+        renderDiagram();
+        document.addEventListener('theme-changed', function() {
+            setTimeout(renderDiagram, 50);
+        });
+
+        mc.addEventListener("mousemove", function(e) {
+            var r = mc.getBoundingClientRect();
+            mc.style.transformOrigin =
+                ((e.clientX - r.left) / r.width  * 100).toFixed(1) + "% " +
+                ((e.clientY - r.top)  / r.height * 100).toFixed(1) + "%";
         });
     })();
-
-    var mc = document.getElementById("mermaid-container");
-    mc.addEventListener("mousemove", function(e) {
-        var r = mc.getBoundingClientRect();
-        mc.style.transformOrigin =
-            ((e.clientX - r.left) / r.width  * 100).toFixed(1) + "% " +
-            ((e.clientY - r.top)  / r.height * 100).toFixed(1) + "%";
-    });
 </script>
 {% endif %}
 {% endblock %}

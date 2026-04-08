@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Threats × Components - Threat Model{% endblock %}
+
+{% block content %}
+<h1>Threats × Components</h1>
+
+{% if active_threats and sorted_components %}
+{% set col_span = sorted_components | length + 1 %}
+<div class="prop-table-wrap">
+<table class="prop-table" id="tc-table">
+    <thead>
+        <tr class="tc-class-row">
+            <th class="prop-sticky"></th>
+            {% for cls, count in component_classes.items() %}
+            <th class="tc-class-header" colspan="{{ count }}">{{ cls }}</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <th class="prop-sticky">Threat</th>
+            {% for comp_name, comp in sorted_components %}
+            <th class="prop-col" style="z-index: {{ loop.revindex }}">
+                <div>
+                    <a href="component_{{ comp_name | slugify }}.html">{{ comp_name }}</a>
+                </div>
+            </th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% set ns = namespace(current_severity=None) %}
+        {% for tid, threat in active_threats %}
+        {% set severity = threat.severity or "Unknown" %}
+        {% if severity != ns.current_severity %}
+        {% set ns.current_severity = severity %}
+        <tr class="prop-section-row">
+            <th class="prop-section-cell prop-sticky" colspan="{{ col_span }}">{{ severity }}</th>
+        </tr>
+        {% endif %}
+        <tr>
+            <td class="prop-sticky tc-threat-cell"
+                data-tooltip="{{ tid }} · {{ threat.description }} ({{ severity }}) | Mitigated by: {{ threat.mapping.mitigations | join(', ') | replace('_', ' ') | replace('.', ': ') }}">
+                <a href="threat_{{ tid }}.html">{{ tid }}</a>
+                <div class="prop-meta">{{ threat.description | truncate(40) }}</div>
+            </td>
+            {% for comp_name, _ in sorted_components %}
+            {% set cell = status[tid].get(comp_name) %}
+            {% if cell %}
+                {% if cell.mitigated %}
+                <td class="prop-cell prop-mit"
+                    data-tooltip="{{ tid }} · {{ threat.description }} | {{ comp_name }} | Mitigated ({{ cell.satisfied }}){% if cell.missing %} · Missing: {{ cell.missing }}{% endif %}">&#x2713;</td>
+                {% else %}
+                <td class="prop-cell prop-req"
+                    data-tooltip="{{ tid }} · {{ threat.description }} | {{ comp_name }} | Not mitigated · Missing: {{ cell.missing }}">&#x2717;</td>
+                {% endif %}
+            {% else %}
+                <td class="prop-cell"></td>
+            {% endif %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p>No active threats or affected components found.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var table = document.getElementById('tc-table');
+    if (!table) return;
+    var headerRow = table.querySelector('thead tr:last-child');
+    table.querySelectorAll('td.prop-cell').forEach(function (cell) {
+        cell.addEventListener('mouseenter', function () {
+            cell.parentElement.cells[0].classList.add('prop-highlight');
+            headerRow.cells[cell.cellIndex].classList.add('prop-highlight');
+        });
+        cell.addEventListener('mouseleave', function () {
+            table.querySelectorAll('.prop-highlight').forEach(function (el) {
+                el.classList.remove('prop-highlight');
+            });
+        });
+    });
+})();
+</script>
+{% endblock %}

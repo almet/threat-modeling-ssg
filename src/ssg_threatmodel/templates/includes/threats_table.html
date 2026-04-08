@@ -7,7 +7,7 @@
         <tr>
             <th class="prop-sticky">Threats</th>
             {% for prop in all_threat_props %}
-            <th class="prop-col">
+            <th class="prop-col" style="z-index: {{ loop.revindex }}">
                 <div>
                     <a href="property_{{ prop | slugify }}.html">{{ prop | replace('_', ' ') | replace('!', 'not ') | title }}</a>
                 </div>
