@@ -1,6 +1,6 @@
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any
+from typing import Any, TextIO
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
@@ -142,8 +142,8 @@ class ThreatModel(BaseModel):
         return self
 
     @classmethod
-    def load_report(cls, filename: str = "report.json") -> "ThreatModel":
-        return cls.model_validate_json(Path(filename).read_text())
+    def load_report(cls, file:TextIO) -> "ThreatModel":
+        return cls.model_validate_json(file.read())
 
     def prepare_scenarios(self, config: SiteConfig) -> None:
         from .graphs import generate_dataflow, generate_sequence

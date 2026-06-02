@@ -1,11 +1,17 @@
 [build-system]
-requires = ["uv_build>=0.5,<0.12"]
+requires = ["uv_build>=0.11.1,<0.12"]
 build-backend = "uv_build"
 
 [project]
-name = "ssg-threatmodel"
+name = "ratm"
 version = "0.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
+readme = "README.md"
+authors = [
+    { name = "Alex Pyrgiotis", email = "alex.p@freedom.press" },
+    { name = "Alexis M", email = "alexis@freedom.press" },
+]
+
 dependencies = [
     "jinja2>=3",
     "pydantic>=2",
@@ -17,12 +23,12 @@ test = [
 ]
 
 [project.scripts]
-ssg-threatmodel = "ssg_threatmodel.cli:main"
+ratm = "ratm.ssg.cli:main"
 
 [tool.uv.build-backend]
-module-name = "ssg_threatmodel"
+module-name = "ratm"
 
 [tool.uv.build-backend.wheel]
 artifacts = [
-    "src/ssg_threatmodel/templates/assets/*.js",
+    "src/ratm/templates/assets/*.js",
 ]

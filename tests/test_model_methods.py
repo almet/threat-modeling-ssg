@@ -1,6 +1,6 @@
 import pytest
 
-from ssg_threatmodel.models import (
+from ssg_threatmodel.ssg.models import (
     Component,
     Finding,
     Flow,

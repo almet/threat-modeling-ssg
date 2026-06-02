@@ -1,7 +1,7 @@
 import shutil
 import tomllib
 from pathlib import Path
-
+import sys
 from jinja2 import Environment, FileSystemLoader
 
 from . import views  # noqa: F401 — registers @view decorators
@@ -30,7 +30,7 @@ def copy_assets(assets_dst):
 def main():
     config = load_config()
 
-    model = ThreatModel.load_report("report.json")
+    model = ThreatModel.load_report(sys.stdin)
 
     env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
     env.filters["basename"] = lambda p: Path(p).name

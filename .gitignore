@@ -1,5 +1,5 @@
 node_modules/
 output/
 report.json
-src/ssg_threatmodel/templates/assets/*.js
+src/ratm/ssg/templates/assets/*.js
 *.pyc
