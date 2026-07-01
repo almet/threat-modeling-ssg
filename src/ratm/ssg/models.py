@@ -1,5 +1,4 @@
 from collections import Counter, defaultdict
-from pathlib import Path
 from typing import Any, TextIO
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator

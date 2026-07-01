@@ -12,3 +12,11 @@ serve:
 
 test:
 	PYTHONPATH=src uv run pytest
+
+lint:
+	uvx ruff check
+	uvx ruff format --check
+
+fix:
+	uvx ruff check --fix
+	uvx ruff format
