@@ -3,6 +3,7 @@ name: Deploy demo to GitHub Pages
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
