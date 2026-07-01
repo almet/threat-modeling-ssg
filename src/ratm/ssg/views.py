@@ -186,6 +186,14 @@ def scenario_view(
         }
 
 
+@view("/scenarios.html", log="Generating scenarios.html...")
+def scenarios_view(
+    config: SiteConfig,
+    model: ThreatModel,
+) -> dict[str, Any]:
+    return {"config": config, "model": model}
+
+
 @view("/threats_components.html", log="Generating threats_components.html...")
 def threats_components_view(
     config: SiteConfig,

@@ -1,0 +1,10 @@
+{% if src %}
+<div class="click-zoom"{% if zoom_style %} style="{{ zoom_style }}"{% endif %}>
+    <label>
+        <input type="checkbox">
+        <div class="dfd-container">
+            <pre class="diagram-source" hidden>{{ src }}</pre>
+        </div>
+    </label>
+</div>
+{% endif %}

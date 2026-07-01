@@ -1,0 +1,9 @@
+{% if has_dfd %}
+<script src="assets/viz-global.js"></script>
+{% endif %}
+{% if has_mermaid %}
+<script src="assets/mermaid.min.js"></script>
+{% endif %}
+{% if has_dfd or has_mermaid %}
+<script src="assets/diagrams.js"></script>
+{% endif %}

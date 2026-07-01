@@ -105,12 +105,9 @@
         </span>
     </summary>
     {% if item.highlighted_dfd %}
-    <div class="click-zoom" style="margin-top: 0.75rem;">
-        <label>
-            <input type="checkbox">
-            <div id="dfd-threat-{{ loop.index }}" class="dfd-container"></div>
-        </label>
-    </div>
+    {% with src=item.highlighted_dfd, zoom_style="margin-top: 0.75rem;" %}
+        {% include "includes/dfd_diagram.html" %}
+    {% endwith %}
     {% else %}
     <p><em>No data flow diagram available for this scenario.</em></p>
     {% endif %}
@@ -125,29 +122,5 @@
 
 {% block scripts %}
 {% set has_dfd = threat_scenario_data | selectattr("highlighted_dfd") | list | length > 0 %}
-{% if has_dfd %}
-<script src="assets/viz-global.js"></script>
-<script>
-Viz.instance().then(function(viz) {
-    {% for item in threat_scenario_data %}
-    {% if item.highlighted_dfd %}
-    (function() {
-        var svg = viz.renderSVGElement({{ item.highlighted_dfd | tojson }});
-        svg.style.width = "100%";
-        svg.style.height = "auto";
-        document.getElementById("dfd-threat-{{ loop.index }}").appendChild(svg);
-    })();
-    {% endif %}
-    {% endfor %}
-});
-document.querySelectorAll(".dfd-container").forEach(function(el) {
-    el.addEventListener("mousemove", function(e) {
-        var r = el.getBoundingClientRect();
-        el.style.transformOrigin =
-            ((e.clientX - r.left) / r.width * 100).toFixed(1) + "% " +
-            ((e.clientY - r.top)  / r.height * 100).toFixed(1) + "%";
-    });
-});
-</script>
-{% endif %}
+{% include "includes/diagram_scripts.html" %}
 {% endblock %}
