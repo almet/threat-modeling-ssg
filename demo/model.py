@@ -1,4 +1,4 @@
-from ratm import Report, Ratm, Actor
+from ratm import Ratm
 from ratm.components import Scenario
 
 # [ Demo threat model ]
@@ -6,7 +6,7 @@ from ratm.components import Scenario
 # Exemple usage of ratm, describing its very own threat model.
 # This is a simplistic example to showcase how the tool works
 # and what can be accomplished with it.
-# 
+#
 # RATM is a tool that:
 #
 # - Let developers use python to define their threat model
@@ -24,16 +24,19 @@ tm.define_properties(
     ("is_exposed", "The component is considered exposed to the attacker"),
     ("is_physical", "The component is a physical one"),
     ("requires_credentials", "The component requires credentials to connect"),
-    ("uses_strong_credentials", "The credentials are strong (2FA with OTP, certificates)"),
+    (
+        "uses_strong_credentials",
+        "The credentials are strong (2FA with OTP, certificates)",
+    ),
     ("publishes_code", "The component publishes code"),
 )
 
 
 # You can define your own threats, naming them and providing:
-# 
+#
 # - a list of requirements, that need to be true for this threat to apply
 # - a list of mitigations. If any of these are true, the threat is considered mitigated.
-# 
+#
 
 # In this example, we use sub-resources, using the dot separator.
 tm.Threat(
@@ -68,7 +71,7 @@ DEV_HOST = tm.Boundary(
 USER_HOST = tm.Boundary(
     name="User host",
     # You can define an array of resources loaded by a boundary
-    loads_resources=["system", "files"]
+    loads_resources=["system", "files"],
 )
 
 # -- Actors
@@ -78,11 +81,7 @@ DEV = tm.Actor(name="Developer", boundary=THE_INTERNET)
 
 # -- Components
 
-DEV_MACHINE = tm.Component(
-    name="Dev machine",
-    is_physical=True,
-    boundary=DEV_HOST
-)
+DEV_MACHINE = tm.Component(name="Dev machine", is_physical=True, boundary=DEV_HOST)
 
 BROWSER = tm.Component(
     name="Browser of the visitor of the threat model",
@@ -114,49 +113,50 @@ PYTHON_PACKAGE = tm.Component(
 # 1. Publishing to PyPI servers (building npm packages)
 # 2. Running the pipeline
 
-release = Scenario(
-    name="Release",
-    description="Build and release the ratm package"
-)
+release = Scenario(name="Release", description="Build and release the ratm package")
 
 release.Dataflow(
     name="Kick off release build",
     description="A dev decides to build and release",
     source=DEV,
-    sink=DEV_MACHINE
+    sink=DEV_MACHINE,
 )
 
 release.Dataflow(
     name="Gather JS deps",
     description="Get JavaScript dependencies from NPM",
     source=DEV_MACHINE,
-    sink=NPM
+    sink=NPM,
 )
 
 release.Dataflow(
     name="Gather python deps",
     description="Get python dependencies from PyPI",
     source=DEV_MACHINE,
-    sink=PYPI
+    sink=PYPI,
 )
 release.Dataflow(
     name="Vendorize JS deps",
     description="Vendorize the JS dependencies in the python package",
     source=DEV_MACHINE,
-    sink=PYTHON_PACKAGE
+    sink=PYTHON_PACKAGE,
 )
 
 release.Dataflow(
     name="Publish on PyPI",
     description="Publish the local package on PyPI",
     source=PYTHON_PACKAGE,
-    sink=PYTHON_PACKAGE
+    sink=PYTHON_PACKAGE,
 )
 
 # And finally, your scenarios
 
 if __name__ == "__main__":
-    report = tm.Report([release,])
+    report = tm.Report(
+        [
+            release,
+        ]
+    )
     out = report.generate()
     import json
 
