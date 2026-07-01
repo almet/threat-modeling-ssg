@@ -61,11 +61,13 @@ def threat_view(
                 if scenario.dfd
                 else None
             )
-            threat_scenario_data.append({
-                "scenario": scenario,
-                "affected_components": affected_in_scenario,
-                "highlighted_dfd": highlighted_dfd,
-            })
+            threat_scenario_data.append(
+                {
+                    "scenario": scenario,
+                    "affected_components": affected_in_scenario,
+                    "highlighted_dfd": highlighted_dfd,
+                }
+            )
         yield {
             "config": config,
             "model": model,
@@ -210,7 +212,11 @@ def threats_components_view(
         return (sev, int(match.group()) if match else 0)
 
     active_threats = sorted(
-        ((tid, t) for tid, t in model.threats.items() if tid in analysis["threat_counter"]),
+        (
+            (tid, t)
+            for tid, t in model.threats.items()
+            if tid in analysis["threat_counter"]
+        ),
         key=sort_key,
     )
 
@@ -234,13 +240,17 @@ def threats_components_view(
                 "missing": ", ".join(fmt(t) for t in missing),
             }
 
-    sorted_components = sorted(affected.items(), key=lambda x: (x[1].component_class, x[0]))
+    sorted_components = sorted(
+        affected.items(), key=lambda x: (x[1].component_class, x[0])
+    )
 
     return {
         "config": config,
         "active_threats": active_threats,
         "sorted_components": sorted_components,
-        "component_classes": Counter(comp.component_class or "Other" for _, comp in sorted_components),
+        "component_classes": Counter(
+            comp.component_class or "Other" for _, comp in sorted_components
+        ),
         "severity_classes": Counter(t.severity or "Unknown" for _, t in active_threats),
         "status": status,
     }
@@ -284,5 +294,3 @@ def stats_view(
         "most_affected_components": comp_threat_counts.most_common(10),
         "unmapped_threats": unmapped,
     }
-
-

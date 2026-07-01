@@ -1,6 +1,7 @@
 from .components import Scenario, Threat, Property, Component
 from typing import Optional
 
+
 class Report:
     def __init__(
         self,

@@ -1,6 +1,6 @@
 import pytest
 
-from ssg_threatmodel.ssg.models import (
+from ratm.ssg.models import (
     Component,
     Finding,
     Flow,
@@ -38,7 +38,10 @@ def test_component_threats(model_factory) -> None:
         scenarios=[
             Scenario(
                 name="S1",
-                findings=[Finding(target="A", threat_id="T1"), Finding(target="B", threat_id="T2")],
+                findings=[
+                    Finding(target="A", threat_id="T1"),
+                    Finding(target="B", threat_id="T2"),
+                ],
                 flows=[FLOW_A_B],
             )
         ],
@@ -58,7 +61,10 @@ def test_threat_affected_components(model_factory) -> None:
         scenarios=[
             Scenario(
                 name="S1",
-                findings=[Finding(target="A", threat_id="T1"), Finding(target="B", threat_id="T1")],
+                findings=[
+                    Finding(target="A", threat_id="T1"),
+                    Finding(target="B", threat_id="T1"),
+                ],
                 flows=[FLOW_A_B],
             )
         ],
@@ -108,11 +114,14 @@ def test_threat_mapping_for_prop() -> None:
         mitigations=["verifies_resources.images", "is_trusted"],
     )
     assert mapping.requirements_for_prop("loads_resources") == [
-        "loads_resources.images", "loads_resources.deps"
+        "loads_resources.images",
+        "loads_resources.deps",
     ]
     assert mapping.requirements_for_prop("reads_input") == ["reads_input"]
     assert mapping.requirements_for_prop("other") == []
-    assert mapping.mitigations_for_prop("verifies_resources") == ["verifies_resources.images"]
+    assert mapping.mitigations_for_prop("verifies_resources") == [
+        "verifies_resources.images"
+    ]
     assert mapping.mitigations_for_prop("is_trusted") == ["is_trusted"]
     assert mapping.mitigations_for_prop("other") == []
 
@@ -120,13 +129,19 @@ def test_threat_mapping_for_prop() -> None:
 def test_property_mitigates_threats(model_factory) -> None:
     model = model_factory(
         threats={
-            "T1": Threat(SID="T1", mapping=ThreatMapping(
-                requirements=["reads_input"], mitigations=["sanitizes_input"]
-            )),
+            "T1": Threat(
+                SID="T1",
+                mapping=ThreatMapping(
+                    requirements=["reads_input"], mitigations=["sanitizes_input"]
+                ),
+            ),
         },
         components={
-            "A": Component(name="A", component_class="Process",
-                           properties={"reads_input": True, "sanitizes_input": True}),
+            "A": Component(
+                name="A",
+                component_class="Process",
+                properties={"reads_input": True, "sanitizes_input": True},
+            ),
             "B": Component(name="B", component_class="Process"),
         },
         scenarios=[
@@ -149,13 +164,19 @@ def test_property_mitigates_threats(model_factory) -> None:
 def test_property_would_mitigate_threats(model_factory) -> None:
     model = model_factory(
         threats={
-            "T1": Threat(SID="T1", mapping=ThreatMapping(
-                requirements=["reads_input"], mitigations=["sanitizes_input"]
-            )),
+            "T1": Threat(
+                SID="T1",
+                mapping=ThreatMapping(
+                    requirements=["reads_input"], mitigations=["sanitizes_input"]
+                ),
+            ),
         },
         components={
-            "A": Component(name="A", component_class="Process",
-                           properties={"reads_input": True, "sanitizes_input": False}),
+            "A": Component(
+                name="A",
+                component_class="Process",
+                properties={"reads_input": True, "sanitizes_input": False},
+            ),
             "B": Component(name="B", component_class="Process"),
         },
         scenarios=[
@@ -179,22 +200,38 @@ def test_property_mitigation_state_dotted(model_factory) -> None:
     """Dotted mitigations: component with correct sub-item is mitigated, wrong sub-item is not."""
     model = model_factory(
         threats={
-            "T-dotted-ok": Threat(SID="T-dotted-ok", mapping=ThreatMapping(
-                requirements=["loads_resources.system"],
-                mitigations=["verifies_resources.system"],
-            )),
-            "T-dotted-miss": Threat(SID="T-dotted-miss", mapping=ThreatMapping(
-                requirements=["loads_resources.images"],
-                mitigations=["verifies_resources.images"],
-            )),
+            "T-dotted-ok": Threat(
+                SID="T-dotted-ok",
+                mapping=ThreatMapping(
+                    requirements=["loads_resources.system"],
+                    mitigations=["verifies_resources.system"],
+                ),
+            ),
+            "T-dotted-miss": Threat(
+                SID="T-dotted-miss",
+                mapping=ThreatMapping(
+                    requirements=["loads_resources.images"],
+                    mitigations=["verifies_resources.images"],
+                ),
+            ),
         },
         components={
-            "Covered": Component(name="Covered", component_class="Process",
-                                 properties={"loads_resources": ["system"],
-                                             "verifies_resources": ["system"]}),
-            "Affected": Component(name="Affected", component_class="Process",
-                                  properties={"loads_resources": ["images"],
-                                              "verifies_resources": ["updates"]}),
+            "Covered": Component(
+                name="Covered",
+                component_class="Process",
+                properties={
+                    "loads_resources": ["system"],
+                    "verifies_resources": ["system"],
+                },
+            ),
+            "Affected": Component(
+                name="Affected",
+                component_class="Process",
+                properties={
+                    "loads_resources": ["images"],
+                    "verifies_resources": ["updates"],
+                },
+            ),
         },
         scenarios=[
             Scenario(
@@ -203,8 +240,14 @@ def test_property_mitigation_state_dotted(model_factory) -> None:
                     Finding(target="Covered", threat_id="T-dotted-ok"),
                     Finding(target="Affected", threat_id="T-dotted-miss"),
                 ],
-                flows=[Flow(id="1", name="Covered to Affected",
-                            source="Covered", sink="Affected")],
+                flows=[
+                    Flow(
+                        id="1",
+                        name="Covered to Affected",
+                        source="Covered",
+                        sink="Affected",
+                    )
+                ],
             )
         ],
         properties={
@@ -221,18 +264,27 @@ def test_property_requiring_threats(model_factory) -> None:
     """Active threats that have the property in their requirements show up for the property page."""
     model = model_factory(
         threats={
-            "T-active": Threat(SID="T-active", mapping=ThreatMapping(
-                requirements=["loads_resources.system"],
-                mitigations=["verifies_resources.system"],
-            )),
-            "T-inactive": Threat(SID="T-inactive", mapping=ThreatMapping(
-                requirements=["loads_resources.images"],
-                mitigations=["verifies_resources.images"],
-            )),
+            "T-active": Threat(
+                SID="T-active",
+                mapping=ThreatMapping(
+                    requirements=["loads_resources.system"],
+                    mitigations=["verifies_resources.system"],
+                ),
+            ),
+            "T-inactive": Threat(
+                SID="T-inactive",
+                mapping=ThreatMapping(
+                    requirements=["loads_resources.images"],
+                    mitigations=["verifies_resources.images"],
+                ),
+            ),
         },
         components={
-            "A": Component(name="A", component_class="Process",
-                           properties={"loads_resources": ["system"]}),
+            "A": Component(
+                name="A",
+                component_class="Process",
+                properties={"loads_resources": ["system"]},
+            ),
             "B": Component(name="B", component_class="Process"),
         },
         scenarios=[
@@ -248,7 +300,8 @@ def test_property_requiring_threats(model_factory) -> None:
     )
     analysis = model.analyze()
     requiring = [
-        tid for tid, t in model.threats.items()
+        tid
+        for tid, t in model.threats.items()
         if tid in analysis["threat_counter"]
         and "loads_resources" in t.mapping.requirement_props
     ]
@@ -265,49 +318,80 @@ def test_is_mitigated_no_mitigations() -> None:
 def test_is_mitigated_boolean() -> None:
     """Boolean mitigation: True = mitigated, False or missing = not mitigated."""
     threat = Threat(SID="T1", mapping=ThreatMapping(mitigations=["is_sandboxed"]))
-    assert threat.is_mitigated(Component(name="X", properties={"is_sandboxed": True})) is True
-    assert threat.is_mitigated(Component(name="X", properties={"is_sandboxed": False})) is False
+    assert (
+        threat.is_mitigated(Component(name="X", properties={"is_sandboxed": True}))
+        is True
+    )
+    assert (
+        threat.is_mitigated(Component(name="X", properties={"is_sandboxed": False}))
+        is False
+    )
     assert threat.is_mitigated(Component(name="X", properties={})) is False
 
 
 def test_is_mitigated_dotted() -> None:
     """Dotted mitigation: correct sub-item = mitigated, wrong or missing sub-item = not mitigated."""
-    threat = Threat(SID="T1", mapping=ThreatMapping(
-        requirements=["loads_resources.images"],
-        mitigations=["verifies_resources.images"],
-    ))
-    assert threat.is_mitigated(
-        Component(name="X", properties={"verifies_resources": ["images"]})
-    ) is True
-    assert threat.is_mitigated(
-        Component(name="X", properties={"verifies_resources": ["updates"]})
-    ) is False
-    assert threat.is_mitigated(
-        Component(name="X", properties={"verifies_resources": None})
-    ) is False
+    threat = Threat(
+        SID="T1",
+        mapping=ThreatMapping(
+            requirements=["loads_resources.images"],
+            mitigations=["verifies_resources.images"],
+        ),
+    )
+    assert (
+        threat.is_mitigated(
+            Component(name="X", properties={"verifies_resources": ["images"]})
+        )
+        is True
+    )
+    assert (
+        threat.is_mitigated(
+            Component(name="X", properties={"verifies_resources": ["updates"]})
+        )
+        is False
+    )
+    assert (
+        threat.is_mitigated(
+            Component(name="X", properties={"verifies_resources": None})
+        )
+        is False
+    )
     assert threat.is_mitigated(Component(name="X", properties={})) is False
 
 
 def test_is_mitigated_any_one_is_enough() -> None:
     """Any single satisfied mitigation is enough; not all are required."""
-    threat = Threat(SID="T1", mapping=ThreatMapping(
-        requirements=["loads_resources.system"],
-        mitigations=["is_trusted", "verifies_resources.system"],
-    ))
+    threat = Threat(
+        SID="T1",
+        mapping=ThreatMapping(
+            requirements=["loads_resources.system"],
+            mitigations=["is_trusted", "verifies_resources.system"],
+        ),
+    )
     # Neither satisfied
     assert threat.is_mitigated(Component(name="X", properties={})) is False
     # Only the boolean one satisfied
-    assert threat.is_mitigated(
-        Component(name="X", properties={"is_trusted": True})
-    ) is True
+    assert (
+        threat.is_mitigated(Component(name="X", properties={"is_trusted": True}))
+        is True
+    )
     # Only the dotted one satisfied
-    assert threat.is_mitigated(
-        Component(name="X", properties={"verifies_resources": ["system"]})
-    ) is True
+    assert (
+        threat.is_mitigated(
+            Component(name="X", properties={"verifies_resources": ["system"]})
+        )
+        is True
+    )
     # Both satisfied
-    assert threat.is_mitigated(
-        Component(name="X", properties={"is_trusted": True, "verifies_resources": ["system"]})
-    ) is True
+    assert (
+        threat.is_mitigated(
+            Component(
+                name="X",
+                properties={"is_trusted": True, "verifies_resources": ["system"]},
+            )
+        )
+        is True
+    )
 
 
 def test_threat_unimplemented_boolean(model_factory) -> None:
@@ -318,9 +402,12 @@ def test_threat_unimplemented_boolean(model_factory) -> None:
         components={},
         scenarios=[],
     )
-    assert model.threat_unimplemented_mitigations(
-        Component(name="X", properties={"is_sandboxed": True}), threat
-    ) == []
+    assert (
+        model.threat_unimplemented_mitigations(
+            Component(name="X", properties={"is_sandboxed": True}), threat
+        )
+        == []
+    )
     assert model.threat_unimplemented_mitigations(
         Component(name="X", properties={"is_sandboxed": False}), threat
     ) == ["is_sandboxed"]
@@ -331,18 +418,24 @@ def test_threat_unimplemented_boolean(model_factory) -> None:
 
 def test_threat_unimplemented_dotted(model_factory) -> None:
     """Dotted mitigation: correct sub-item = implemented, wrong or missing = unimplemented."""
-    threat = Threat(SID="T1", mapping=ThreatMapping(
-        requirements=["loads_resources.images"],
-        mitigations=["verifies_resources.images"],
-    ))
+    threat = Threat(
+        SID="T1",
+        mapping=ThreatMapping(
+            requirements=["loads_resources.images"],
+            mitigations=["verifies_resources.images"],
+        ),
+    )
     model = model_factory(
         threats={"T1": threat},
         components={},
         scenarios=[],
     )
-    assert model.threat_unimplemented_mitigations(
-        Component(name="X", properties={"verifies_resources": ["images"]}), threat
-    ) == []
+    assert (
+        model.threat_unimplemented_mitigations(
+            Component(name="X", properties={"verifies_resources": ["images"]}), threat
+        )
+        == []
+    )
     assert model.threat_unimplemented_mitigations(
         Component(name="X", properties={"verifies_resources": ["updates"]}), threat
     ) == ["verifies_resources.images"]
@@ -356,10 +449,13 @@ def test_threat_unimplemented_dotted(model_factory) -> None:
 
 def test_threat_unimplemented_multiple(model_factory) -> None:
     """Multiple mitigations: returns only the unimplemented ones."""
-    threat = Threat(SID="T1", mapping=ThreatMapping(
-        requirements=["loads_resources.system"],
-        mitigations=["is_trusted", "verifies_resources.system"],
-    ))
+    threat = Threat(
+        SID="T1",
+        mapping=ThreatMapping(
+            requirements=["loads_resources.system"],
+            mitigations=["is_trusted", "verifies_resources.system"],
+        ),
+    )
     model = model_factory(
         threats={"T1": threat},
         components={},
@@ -381,7 +477,13 @@ def test_threat_unimplemented_multiple(model_factory) -> None:
     ) == ["is_trusted"]
 
     # Both implemented
-    assert model.threat_unimplemented_mitigations(
-        Component(name="X", properties={"is_trusted": True, "verifies_resources": ["system"]}),
-        threat,
-    ) == []
+    assert (
+        model.threat_unimplemented_mitigations(
+            Component(
+                name="X",
+                properties={"is_trusted": True, "verifies_resources": ["system"]},
+            ),
+            threat,
+        )
+        == []
+    )

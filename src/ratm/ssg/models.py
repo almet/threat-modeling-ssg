@@ -142,7 +142,7 @@ class ThreatModel(BaseModel):
         return self
 
     @classmethod
-    def load_report(cls, file:TextIO) -> "ThreatModel":
+    def load_report(cls, file: TextIO) -> "ThreatModel":
         return cls.model_validate_json(file.read())
 
     def prepare_scenarios(self, config: SiteConfig) -> None:
@@ -210,7 +210,11 @@ class ThreatModel(BaseModel):
         self, component: Component, threat: Threat
     ) -> list[str]:
         """Mitigation tokens from threat.mapping.mitigations not yet satisfied by component."""
-        return [tok for tok in threat.mapping.mitigations if not _token_satisfied(component, tok)]
+        return [
+            tok
+            for tok in threat.mapping.mitigations
+            if not _token_satisfied(component, tok)
+        ]
 
     def component_unimplemented_mitigations(
         self, component: Component, threat_ids: set[str]
@@ -263,12 +267,15 @@ class ThreatModel(BaseModel):
 
             would_be_mitigated_threats.append((tid, threat))
             for comp_name, comp in missing:
-                entry = benefit_components.setdefault(comp_name, {
-                    "name": comp_name,
-                    "comp": comp,
-                    "current_value": comp.properties.get(prop_key),
-                    "threats": [],
-                })
+                entry = benefit_components.setdefault(
+                    comp_name,
+                    {
+                        "name": comp_name,
+                        "comp": comp,
+                        "current_value": comp.properties.get(prop_key),
+                        "threats": [],
+                    },
+                )
                 entry["threats"].append((tid, threat))
 
         mitigated_threats.sort(key=lambda item: item[0])

@@ -1,8 +1,8 @@
 import csv
+import dataclasses
 import functools
 import hashlib
 import pathlib
-import dataclasses
 from dataclasses import dataclass
 
 
