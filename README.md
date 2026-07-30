@@ -14,6 +14,5 @@ This tool actually came out as a way to do the threat modeling of [dangerzone](h
 We include a short demo showcasing how to define components, threats, boundaries and scenarios. Here is how to generate a static site out of it:
 
 ```bash
-uv pip install -e .
-uv run demo/model.py | uv run ratm
+uv run demo/model.py | uvx ratm
 ```
