@@ -18,8 +18,8 @@ tm = Ratm(load_capec_info=False)
 
 # A list of properties: (name, description, default, type)
 tm.define_properties(
-    ("loads_resources", "Loads resources external to the program.", tuple(), tuple),
-    ("verifies_resources", "Verifies the resources before use.", tuple(), tuple),
+    ("loads_resources", "Loads resources external to the program.", (), tuple),
+    ("verifies_resources", "Verifies the resources before use.", (), tuple),
     ("uses_network", "The component uses the network stack"),
     ("is_exposed", "The component is considered exposed to the attacker"),
     ("is_physical", "The component is a physical one"),

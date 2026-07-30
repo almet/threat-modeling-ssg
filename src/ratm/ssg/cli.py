@@ -1,7 +1,7 @@
 import shutil
+import sys
 import tomllib
 from pathlib import Path
-import sys
 
 import click
 from jinja2 import Environment, FileSystemLoader

@@ -198,7 +198,7 @@ class Dataflow:
             "sink": self.sink.name if self.sink else None,
             "is_response": self.is_response,
             "response_to": self.response_to.name if self.response_to else None,
-            "data": sorted(list({d.name for d in data})),
+            "data": sorted({d.name for d in data}),
         }
 
     def iter_components(self):
@@ -224,7 +224,6 @@ class CAPECInfo:
     example: str = None
     prerequisites: str = None
     mitigations: str = None
-    example: str = None
     # FIXME: Should this become a list?
     references: str = None
 

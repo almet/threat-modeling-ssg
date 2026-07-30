@@ -1,14 +1,13 @@
-from .components import Scenario, Threat, Property, Component
-from typing import Optional
+from .components import Component, Property, Scenario, Threat
 
 
 class Report:
     def __init__(
         self,
         scenarios: [Scenario],
-        components: Optional[[Component]] = None,
-        threats: Optional[[Threat]] = None,
-        properties: Optional[[Property]] = None,
+        components: [Component] | None = None,
+        threats: [Threat] | None = None,
+        properties: [Property] | None = None,
     ):
         self.scenarios = scenarios
         self.threats = threats

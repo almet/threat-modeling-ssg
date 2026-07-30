@@ -63,7 +63,7 @@ class Ratm:
 
         fields = dataclasses.fields(self.component_properties_cls)
         fields_set = {f.name for f in fields}
-        kwargs_set = {key for key in kwargs.keys()}
+        kwargs_set = {key for key in kwargs}
         props_set = kwargs_set & fields_set
         props = {name: kwargs.pop(name) for name in props_set}
 
