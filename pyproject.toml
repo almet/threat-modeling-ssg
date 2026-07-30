@@ -31,5 +31,5 @@ module-name = "ratm"
 
 [tool.uv.build-backend.wheel]
 artifacts = [
-    "src/ratm/templates/assets/*.js",
+    "src/ratm/ssg/templates/assets/*.js",
 ]

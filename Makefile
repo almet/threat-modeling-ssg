@@ -1,7 +1,7 @@
-build: src/ssg_threatmodel/templates/assets/viz-global.js src/ssg_threatmodel/templates/assets/mermaid.min.js
+build: src/ratm/ssg/templates/assets/viz-global.js src/ratm/ssg/templates/assets/mermaid.min.js
 	uv run demo/model.py | uv run ratm
 
-src/ssg_threatmodel/templates/assets/viz-global.js src/ssg_threatmodel/templates/assets/mermaid.min.js: package.json
+src/ratm/ssg/templates/assets/viz-global.js src/ratm/ssg/templates/assets/mermaid.min.js: package.json
 	npm install && npm run install-assets
 
 regenerate:
