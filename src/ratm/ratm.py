@@ -112,7 +112,7 @@ class Ratm:
 
         return threat
 
-    def Report(self, scenarios: [components.Scenario]):
+    def Report(self, scenarios: list[components.Scenario]):
         return report.Report(
             scenarios=scenarios,
             components=self.components.values(),

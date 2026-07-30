@@ -4,17 +4,17 @@ from .components import Component, Property, Scenario, Threat
 class Report:
     def __init__(
         self,
-        scenarios: [Scenario],
-        components: [Component] | None = None,
-        threats: [Threat] | None = None,
-        properties: [Property] | None = None,
+        scenarios: list[Scenario],
+        components: list[Component] | None = None,
+        threats: list[Threat] | None = None,
+        properties: list[Property] | None = None,
     ):
         self.scenarios = scenarios
         self.threats = threats
         self.properties = properties
         self.components = components or self.populate_components(scenarios)
 
-    def populate_components(self, scenarios: [Scenario]):
+    def populate_components(self, scenarios: list[Scenario]):
         """Iterate all scenarios and retrieve their components."""
         components = {}
         for scenario in scenarios:

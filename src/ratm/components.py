@@ -175,7 +175,7 @@ class Dataflow:
     response_to: "Dataflow" = None
     data: Component = None
     description: str | None = None
-    labels: [str] = None
+    labels: list[str] | None = None
 
     def __post_init__(self):
         if self.id is None:
@@ -252,8 +252,8 @@ class Threat:
     """The requirements and mitigations for a threat, alongside its info."""
 
     id: str
-    requirements: [str]
-    mitigations: [str]
+    requirements: list[str]
+    mitigations: list[str]
     capec_info: CAPECInfo = None
     comment: str = None
 
@@ -305,9 +305,9 @@ class Scenario:
     """A scenario that shows how components may interact with each other."""
 
     name: str
-    dataflows: [Dataflow] = None
+    dataflows: list[Dataflow] | None = None
     description: str = None
-    findings: [Finding] = None
+    findings: list[Finding] | None = None
 
     def copy_from_label(self, label, name, description=None):
         new_flows = []
@@ -325,7 +325,7 @@ class Scenario:
                     yield component
                     visited.add(component.name)
 
-    def populate_findings(self, threats: [Threat]):
+    def populate_findings(self, threats: list[Threat]):
         findings = []
         components = list(self.iter_components())
         for threat in threats:
