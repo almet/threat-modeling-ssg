@@ -1,5 +1,5 @@
 from ratm import Ratm
-from ratm.components import Scenario
+from ratm.components import CAPECInfo, Scenario
 
 # [ Demo threat model ]
 # ------------------------------------------------------------
@@ -29,6 +29,9 @@ tm.define_properties(
         "The credentials are strong (2FA with OTP, certificates)",
     ),
     ("publishes_code", "The component publishes code"),
+    ("stores_secrets", "The component keeps secrets (tokens, keys) at rest"),
+    ("encrypts_secrets", "The secrets at rest are encrypted"),
+    ("executes_code", "The component runs code it did not author itself"),
 )
 
 
@@ -37,6 +40,8 @@ tm.define_properties(
 # - a list of requirements, that need to be true for this threat to apply
 # - a list of mitigations. If any of these are true, the threat is considered mitigated.
 #
+# Threats which are not CAPEC ones can carry their own information, so the report
+# has something to display (severity, description, details).
 
 # In this example, we use sub-resources, using the dot separator.
 tm.Threat(
@@ -44,12 +49,61 @@ tm.Threat(
     requirements=["loads_resources.deps"],
     mitigations=["verifies_resources.deps"],
     comment="Check that every component that explicitly loads packages verify them",
+    capec_info=CAPECInfo(
+        description="Unverified dependencies",
+        severity="High",
+        details=(
+            "A component installing packages without checking their integrity"
+            " runs whatever the registry (or someone impersonating it) serves."
+        ),
+    ),
 )
+
+# Requirements can compare two properties with == and !=.
 tm.Threat(
-    "RATM-1-DEPS",
-    requirements=["loads_resources.deps"],
-    mitigations=["verifies_resources.deps"],
-    comment="Check that every component that explicitly loads packages verify them",
+    "RATM-2-WEAKCREDS",
+    requirements=["requires_credentials != uses_strong_credentials"],
+    mitigations=["uses_strong_credentials"],
+    comment="Anything asking for credentials should ask for strong ones",
+    capec_info=CAPECInfo(
+        description="Weak credentials on an authenticated component",
+        severity="Medium",
+        details=(
+            "Credentials that are neither hardware-backed nor short-lived can be"
+            " replayed by whoever gets a copy of them."
+        ),
+    ),
+)
+
+# Requirements can also be negated, with a leading "!".
+tm.Threat(
+    "RATM-3-SECRETS",
+    requirements=["stores_secrets", "!encrypts_secrets"],
+    mitigations=["encrypts_secrets"],
+    comment="Secrets kept on disk should not be readable as-is",
+    capec_info=CAPECInfo(
+        description="Secrets stored unencrypted",
+        severity="Very High",
+        details=(
+            "A publishing token written in cleartext can be read by any process"
+            " running as the same user."
+        ),
+    ),
+)
+
+tm.Threat(
+    "RATM-4-EXEC",
+    requirements=["executes_code"],
+    mitigations=["verifies_resources.source"],
+    comment="Running someone else's code means trusting where it came from",
+    capec_info=CAPECInfo(
+        description="Execution of unverified code",
+        severity="High",
+        details=(
+            "Both the generator and the browser rendering the report end up"
+            " executing code nobody reviewed at that point."
+        ),
+    ),
 )
 
 
@@ -76,21 +130,41 @@ USER_HOST = tm.Boundary(
 
 # -- Actors
 
-USER = tm.Actor(name="User", boundary=USER_HOST)
-DEV = tm.Actor(name="Developer", boundary=THE_INTERNET)
+USER = tm.Actor(
+    name="User",
+    description="Someone reading a published threat model report.",
+    boundary=USER_HOST,
+)
+DEV = tm.Actor(
+    name="Developer",
+    description="The person writing the model and publishing the report.",
+    boundary=DEV_HOST,
+)
 
 # -- Components
 
-DEV_MACHINE = tm.Component(name="Dev machine", is_physical=True, boundary=DEV_HOST)
+DEV_MACHINE = tm.Component(
+    name="Dev machine",
+    description="The laptop where the model is written, built and published from.",
+    is_physical=True,
+    boundary=DEV_HOST,
+    # The publishing token lives here, in cleartext.
+    stores_secrets=True,
+    executes_code=True,
+)
 
 BROWSER = tm.Component(
     name="Browser of the visitor of the threat model",
+    description="Renders the generated report, diagrams included.",
     boundary=USER_HOST,
     uses_network=True,
+    # The report ships mermaid and viz-js, and runs them on model-authored strings.
+    executes_code=True,
 )
 
 PYPI = tm.Component(
     name="PyPI servers",
+    description="Where the ratm package is released.",
     boundary=THE_INTERNET,
     requires_credentials=True,
     uses_strong_credentials=True,
@@ -99,19 +173,47 @@ PYPI = tm.Component(
 
 NPM = tm.Component(
     name="NPM servers",
+    description="Where the vendored JavaScript dependencies come from.",
     boundary=THE_INTERNET,
     requires_credentials=True,
     uses_strong_credentials=True,
     publishes_code=True,
 )
 
-PYTHON_PACKAGE = tm.Component(
-    name="pytm python package",
+RATM_PACKAGE = tm.Component(
+    name="ratm python package",
+    description="The ratm distribution, vendoring its JavaScript assets.",
+    boundary=DEV_HOST,
     loads_resources=["deps"],
 )
+
+MODEL_SCRIPT = tm.Component(
+    name="Threat model script",
+    description="The model.py describing the system under study.",
+    boundary=DEV_HOST,
+    # Its dependencies are pinned and hash-checked by uv.lock, unlike the ones above.
+    loads_resources=["deps"],
+    verifies_resources=["deps"],
+)
+
+GENERATED_REPORT = tm.Component(
+    name="Generated report",
+    description="The static site written to output/, before it gets published.",
+    boundary=DEV_HOST,
+)
+
+PAGES = tm.Component(
+    name="Static site host",
+    description="Serves the published report to anyone with the URL.",
+    boundary=THE_INTERNET,
+    requires_credentials=True,
+    is_exposed=True,
+)
+
 # -- Scenarios
 # 1. Publishing to PyPI servers (building npm packages)
-# 2. Running the pipeline
+# 2. Authoring a model and generating the report locally
+# 3. Publishing the generated report and having it read
 
 release = Scenario(name="Release", description="Build and release the ratm package")
 
@@ -139,14 +241,109 @@ release.Dataflow(
     name="Vendorize JS deps",
     description="Vendorize the JS dependencies in the python package",
     source=DEV_MACHINE,
-    sink=PYTHON_PACKAGE,
+    sink=RATM_PACKAGE,
 )
 
 release.Dataflow(
     name="Publish on PyPI",
     description="Publish the local package on PyPI",
-    source=PYTHON_PACKAGE,
-    sink=PYTHON_PACKAGE,
+    source=RATM_PACKAGE,
+    sink=PYPI,
+)
+
+authoring = Scenario(
+    name="Authoring the model",
+    description="Describe a system in python and render it locally",
+)
+
+authoring.Dataflow(
+    name="Write the threat model",
+    description="The dev describes components, threats and scenarios",
+    source=DEV,
+    sink=MODEL_SCRIPT,
+)
+
+run_model = authoring.Dataflow(
+    name="Run the model script",
+    description="`uv run demo/model.py` executes the model as plain python",
+    source=DEV_MACHINE,
+    sink=MODEL_SCRIPT,
+)
+
+# A flow can be marked as the response to another one: the sequence diagram
+# then draws it as a return arrow.
+authoring.Dataflow(
+    name="Emit the JSON report",
+    description="The script prints the compiled model on stdout",
+    source=MODEL_SCRIPT,
+    sink=DEV_MACHINE,
+    is_response=True,
+    response_to=run_model,
+)
+
+authoring.Dataflow(
+    name="Generate the static site",
+    description="The JSON report is piped into ratm",
+    source=DEV_MACHINE,
+    sink=RATM_PACKAGE,
+)
+
+authoring.Dataflow(
+    name="Write the report files",
+    description="Templates and vendored assets are rendered to output/",
+    source=RATM_PACKAGE,
+    sink=GENERATED_REPORT,
+)
+
+publishing = Scenario(
+    name="Publishing the report",
+    description="Push the generated report online and have someone read it",
+)
+
+publishing.Dataflow(
+    name="Trigger the publication",
+    description="The dev decides the report is ready to be shared",
+    source=DEV,
+    sink=DEV_MACHINE,
+)
+
+upload = publishing.Dataflow(
+    name="Upload the generated site",
+    description="The report files are pushed to the hosting platform",
+    source=GENERATED_REPORT,
+    sink=PAGES,
+)
+
+publishing.Dataflow(
+    name="Deployment status",
+    description="The host reports whether the deployment succeeded",
+    source=PAGES,
+    sink=DEV_MACHINE,
+    is_response=True,
+    response_to=upload,
+)
+
+publishing.Dataflow(
+    name="Open the report URL",
+    description="A reader follows a link to the published model",
+    source=USER,
+    sink=BROWSER,
+)
+
+fetch = publishing.Dataflow(
+    name="Fetch the report",
+    description="The browser requests the published pages and assets",
+    source=BROWSER,
+    sink=PAGES,
+)
+
+publishing.Dataflow(
+    name="Serve the report",
+    description="HTML, diagrams and the vendored JS bundles are served back",
+    source=PAGES,
+    sink=BROWSER,
+    is_response=True,
+    response_to=fetch,
 )
 
 # And finally, your scenarios
@@ -155,6 +352,8 @@ if __name__ == "__main__":
     report = tm.Report(
         [
             release,
+            authoring,
+            publishing,
         ]
     )
     out = report.generate()
