@@ -5,7 +5,7 @@ from typing import Any
 
 from .graphs import generate_highlighted_dataflow
 from .models import Component, SiteConfig, ThreatModel, _token_satisfied
-from .utils import slugify, view
+from .utils import display_token, slugify, view
 
 
 @view("/index.html", log="Generating index.html...")
@@ -210,9 +210,7 @@ def property_view(
             "prop_slug": slug,
             "data": {
                 "label": prop.name,
-                "display_label": (
-                    prop_key.replace("_", " ").replace("!", "not ").title()
-                ),
+                "display_label": display_token(prop_key).title(),
                 "slug": slug,
                 "mitigated_threats": mitigated_threats,
                 "would_be_mitigated_threats": would_be_mitigated_threats,
