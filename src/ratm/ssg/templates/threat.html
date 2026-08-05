@@ -48,7 +48,7 @@
         <p>Component properties that must be true for this threat to apply:</p>
         <div class="tag-list">
             {% for prop in threat.mapping.requirements %}
-            <span class="tag tag--true">{{ prop | replace('_', ' ') }}</span>
+            <a href="{{ prop | property_href }}" class="tag tag--true">{{ prop | display }}</a>
             {% else %}
             <em>None specified.</em>
             {% endfor %}
@@ -59,7 +59,7 @@
         <p>Component properties that mitigate this threat:</p>
         <div class="tag-list">
             {% for prop in threat.mapping.mitigations %}
-            <span class="tag tag--false">{{ prop | replace('_', ' ') }}</span>
+            <a href="{{ prop | property_href }}" class="tag tag--false">{{ prop | display }}</a>
             {% else %}
             <em>None specified.</em>
             {% endfor %}
