@@ -141,12 +141,43 @@ def component_view(
         }
 
 
+_PLURAL_CLASSES = {
+    "Actor": "Actors",
+    "Boundary": "Boundaries",
+    "Component": "Components",
+}
+
+
 @view("/components.html", log="Generating components.html...")
 def components_view(
     config: SiteConfig,
     model: ThreatModel,
 ) -> dict[str, Any]:
-    return {"config": config, "model": model}
+    prop_keys = list(model.properties)
+    members_by_class: dict[str, list] = {}
+    for name, component in sorted(
+        model.components.items(), key=lambda x: x[1].component_class
+    ):
+        if component.component_class in config.hide_components_with_category:
+            continue
+        members_by_class.setdefault(component.component_class, []).append(
+            (name, component)
+        )
+    class_tables = [
+        {
+            "label": _PLURAL_CLASSES.get(cls, cls),
+            "members": members,
+            "props": [
+                key
+                for key in prop_keys
+                if any(
+                    comp.get_property(key) not in (False, None) for _, comp in members
+                )
+            ],
+        }
+        for cls, members in members_by_class.items()
+    ]
+    return {"config": config, "model": model, "class_tables": class_tables}
 
 
 @view(

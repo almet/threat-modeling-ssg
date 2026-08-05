@@ -1,51 +1,43 @@
-{% if model.components %}
-{% set prop_keys = model.properties | list %}
+{% for group in class_tables %}
 <div class="prop-table-wrap">
 <table class="prop-table">
     <thead>
         <tr>
-            <th class="prop-sticky">Components</th>
-            {% for key in prop_keys %}
+            <th class="prop-sticky prop-section-cell">{{ group.label }}</th>
+            {% for key in group.props %}
             <th class="prop-col" style="z-index: {{ loop.revindex }}">
                 <div>
-                    <a href="property_{{ key | slugify }}.html">{{ key | replace('_', ' ') | replace('!', 'not ') | title }}</a>
+                    <a href="{{ key | property_href }}">{{ key | display | title }}</a>
                 </div>
             </th>
             {% endfor %}
         </tr>
     </thead>
     <tbody>
-        {% set ns = namespace(current_class=None) %}
-        {% for comp_name, component in model.components | sort_by_class %}
-        {% if component.component_class not in config.hide_components_with_category %}
-        {% if component.component_class != ns.current_class %}
-        {% set ns.current_class = component.component_class %}
-        <tr class="prop-section-row">
-            <td class="prop-section-cell prop-sticky">{{ component.component_class }}</td>
-            {% for _ in prop_keys %}<td class="prop-section-spacer"></td>{% endfor %}
-        </tr>
-        {% endif %}
+        {% for comp_name, component in group.members %}
         <tr>
-            <td class="prop-sticky" title="{{ comp_name }} — {{ component.component_class }}{% if component.inBoundary %} · {{ component.inBoundary }}{% endif %}">
+            <td class="prop-sticky" title="{{ comp_name }}{% if component.inBoundary %} — {{ component.inBoundary }}{% endif %}">
                 <a href="component_{{ comp_name | slugify }}.html">{{ comp_name }}</a>
-                <div class="prop-meta">{{ component.component_class }}{% if component.inBoundary %} · {{ component.inBoundary }}{% endif %}</div>
+                {% if component.inBoundary %}<div class="prop-meta">{{ component.inBoundary }}</div>{% endif %}
             </td>
-            {% for key in prop_keys %}
+            {% for key in group.props %}
             {% set val = component.get_property(key) %}
-	    {% set label = key | replace('_', ' ') | title %}
-	    {% if val is sameas true %}
-	    	<td class="prop-cell prop-true" data-tooltip="{{ comp_name }} · {{ label }} = true">✓</td>
-	    {% elif val is sameas false %}
-	    	<td class="prop-cell prop-false" data-tooltip="{{ comp_name }} · {{ label }} = false">✗</td>
-	    {% else %}
-	        <td class="prop-cell prop-true" data-tooltip="{{ comp_name }} · {{ label }} = {{ val }}">*</td>{% endif %}
+            {% set label = key | display | title %}
+            {% if val is sameas true %}
+                <td class="prop-cell prop-true" data-tooltip="{{ comp_name }}&#10;{{ label }} = true">✓</td>
+            {% elif val is sameas false %}
+                <td class="prop-cell prop-false" data-tooltip="{{ comp_name }}&#10;{{ label }} = false">✗</td>
+            {% else %}
+                <td class="prop-cell prop-true" data-tooltip="{{ comp_name }}&#10;{{ label }} = {{ val }}">*</td>
+            {% endif %}
             {% endfor %}
         </tr>
-        {% endif %}
         {% endfor %}
     </tbody>
 </table>
 </div>
+{% endfor %}
+{% if class_tables %}
 <script>
 (function() {
     document.querySelectorAll('.prop-table').forEach(function(table) {
