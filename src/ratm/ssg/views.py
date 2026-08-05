@@ -272,9 +272,6 @@ def threats_components_view(
         key=sort_key,
     )
 
-    def fmt(tok: str) -> str:
-        return tok.replace("_", " ").replace(".", ": ")
-
     affected: dict[str, Component] = {}
     status: dict[str, dict[str, dict]] = {}
     for tid, threat in active_threats:
@@ -288,8 +285,8 @@ def threats_components_view(
                 (satisfied if _token_satisfied(comp, tok) else missing).append(tok)
             status[tid][comp_name] = {
                 "mitigated": bool(satisfied),
-                "satisfied": ", ".join(fmt(t) for t in satisfied),
-                "missing": ", ".join(fmt(t) for t in missing),
+                "satisfied": satisfied,
+                "missing": missing,
             }
 
     sorted_components = sorted(

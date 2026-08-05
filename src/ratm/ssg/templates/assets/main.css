@@ -460,32 +460,82 @@ th.prop-col.prop-highlight div {
     &:hover { opacity: 1; }
 }
 
-/* Matrix threat-cell tooltip */
-.tc-threat-cell {
-    position: relative;
+.prop-table .cell-tip {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--color-bg-header);
+    color: var(--color-text);
+    border: 1px solid var(--color-accent);
+    padding: var(--tooltip-padding);
+    border-radius: var(--tooltip-radius);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: var(--tooltip-font-size);
+    line-height: 1.5;
+    width: max-content;
+    max-width: var(--tooltip-max-w);
+    white-space: normal;
+    text-align: left;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 10;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), var(--color-glow);
+}
 
-    &::after {
-        content: attr(data-tooltip);
-        position: absolute;
-        bottom: calc(100% + 4px);
-        left: 0;
-        background: var(--color-bg-header);
-        color: var(--color-text);
-        border: 1px solid var(--color-border);
-        padding: var(--tooltip-padding);
-        border-radius: var(--tooltip-radius);
-        font-size: var(--tooltip-font-size);
-        max-width: var(--tooltip-max-w);
-        width: max-content;
-        white-space: normal;
-        line-height: 1.5;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.15s;
-        z-index: 10;
-        box-shadow: var(--color-glow);
-    }
-    &:hover::after { opacity: 1; }
+td.prop-cell:hover .cell-tip,
+th.prop-col:hover .cell-tip {
+    opacity: 1;
+}
+
+td.prop-cell:hover {
+    z-index: 250;
+}
+
+th.prop-col:hover {
+    z-index: 250 !important;
+    background: transparent;
+}
+
+th.prop-col {
+    position: relative;
+}
+
+th.prop-col .cell-tip {
+    bottom: auto;
+    top: calc(100% + 4px);
+    left: 0;
+    transform: none;
+}
+
+.cell-tip__title {
+    font-weight: 600;
+}
+
+.cell-tip__meta {
+    color: var(--color-text-dim);
+}
+
+.cell-tip__none {
+    color: var(--color-text-dim);
+    font-style: italic;
+}
+
+.cell-tip__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.cell-tip .tag {
+    margin: 0;
 }
 
 /* Matrix severity header row */
