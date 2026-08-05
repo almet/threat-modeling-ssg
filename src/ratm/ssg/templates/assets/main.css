@@ -825,3 +825,11 @@ footer {
     font-weight: bold;
     color: var(--color-1);
 }
+
+svg a {
+    cursor: pointer;
+    text-shadow: none;
+
+    text { text-decoration: none; }
+    &:hover text { text-decoration: underline; }
+}
