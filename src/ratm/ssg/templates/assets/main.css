@@ -104,7 +104,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 body {
-    font-family: 'Share Tech Mono', monospace;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.55;
     margin: 0;
     padding: 0;
     background-color: var(--color-bg);
