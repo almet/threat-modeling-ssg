@@ -831,11 +831,6 @@ a.count-box:hover {
 .count-box--teal:hover   { box-shadow: 0 8px 20px var(--color-count-teal-glow); }
 .count-box--grey:hover   { box-shadow: 0 8px 20px var(--color-count-grey-glow); }
 
-.site-logo {
-    max-height: 60px;
-    display: block;
-    margin-bottom: 10px;
-}
 
 .severity-chart {
     margin: 16px 0 24px 0;
