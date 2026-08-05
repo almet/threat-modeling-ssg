@@ -1,4 +1,7 @@
-build: src/ratm/ssg/templates/assets/viz-global.js src/ratm/ssg/templates/assets/mermaid.min.js
+install:
+	uv pip install -e .
+
+build: src/ratm/ssg/templates/assets/viz-global.js src/ratm/ssg/templates/assets/mermaid.min.js install
 	uv run demo/model.py | uv run ratm
 
 src/ratm/ssg/templates/assets/viz-global.js src/ratm/ssg/templates/assets/mermaid.min.js: package.json
