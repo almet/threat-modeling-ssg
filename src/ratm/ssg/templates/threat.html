@@ -93,9 +93,8 @@
 
 <h2>Affected Scenarios</h2>
 {% if threat_scenario_data %}
-<button onclick="document.querySelectorAll('.scenario-details').forEach(d => d.open = true)">Unfold all</button>
 {% for item in threat_scenario_data %}
-<details class="scenario-details">
+<details class="scenario-details" open>
     <summary>
         <a href="scenario_{{ item.scenario.name.replace(' ', '_') }}.html">{{ item.scenario.name }}</a>
         <span class="affected-components-inline">
