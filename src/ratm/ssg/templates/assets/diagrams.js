@@ -74,6 +74,7 @@
 
         renderDiagrams();
         document.addEventListener("theme-changed", function () {
+            if (!mermaidContainers.some(function (c) { return document.contains(c); })) return;
             setTimeout(renderDiagrams, 50);
         });
         mermaidContainers.forEach(trackZoomOrigin);
