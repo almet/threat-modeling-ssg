@@ -17,19 +17,19 @@ class ThreatMapping(BaseModel):
 
     @property
     def requirement_props(self) -> set[str]:
-        return {k.split(".", 1)[0] for k in self.requirements}
+        return {prop for k in self.requirements for prop in _token_props(k)}
 
     @property
     def mitigation_props(self) -> set[str]:
-        return {k.split(".", 1)[0] for k in self.mitigations}
+        return {prop for k in self.mitigations for prop in _token_props(k)}
 
     def requirements_for_prop(self, base_prop: str) -> list[str]:
-        """All requirement tokens whose base prop matches base_prop."""
-        return [k for k in self.requirements if k.split(".", 1)[0] == base_prop]
+        """All requirement tokens referring to base_prop."""
+        return [k for k in self.requirements if base_prop in _token_props(k)]
 
     def mitigations_for_prop(self, base_prop: str) -> list[str]:
-        """All mitigation tokens whose base prop matches base_prop."""
-        return [k for k in self.mitigations if k.split(".", 1)[0] == base_prop]
+        """All mitigation tokens referring to base_prop."""
+        return [k for k in self.mitigations if base_prop in _token_props(k)]
 
 
 class Threat(BaseModel):
@@ -105,9 +105,30 @@ class Property(BaseModel):
     _key: str | None = PrivateAttr(default=None)
 
 
+def _token_props(token: str) -> list[str]:
+    """The property names a requirement/mitigation token refers to."""
+    token = token.strip()
+    for operator in ("!=", "=="):
+        if operator in token:
+            left, right = token.split(operator, 1)
+            return [left.strip(), right.strip()]
+    return [token.removeprefix("!").split(".", 1)[0]]
+
+
 def _token_satisfied(component: Component, token: str) -> bool:
-    """Check if a single mitigation token (e.g. 'is_sandboxed' or 'verifies_resources.deps')
-    is satisfied by the component's properties."""
+    """Check if a single requirement/mitigation token is satisfied by the component.
+
+    Mirrors ComponentProperties.matches() on the report side: negation ('!is_exposed'),
+    comparison ('requires_credentials != uses_strong_credentials'), sub-resources
+    ('verifies_resources.deps') and plain truthiness ('is_physical')."""
+    token = token.strip()
+    if token.startswith("!"):
+        return not _token_satisfied(component, token[1:])
+    for operator in ("!=", "=="):
+        if operator in token:
+            left, right = (part.strip() for part in token.split(operator, 1))
+            equal = component.properties.get(left) == component.properties.get(right)
+            return not equal if operator == "!=" else equal
     if "." in token:
         prop, item = token.split(".", 1)
         value = component.properties.get(prop)
@@ -223,9 +244,10 @@ class ThreatModel(BaseModel):
             threat = self.threats.get(tid)
             if threat:
                 missing.update(
-                    tok.split(".", 1)[0]
+                    prop
                     for tok in threat.mapping.mitigations
                     if not _token_satisfied(component, tok)
+                    for prop in _token_props(tok)
                 )
         return sorted(missing)
 
