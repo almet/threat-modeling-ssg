@@ -392,22 +392,28 @@ nav {
         transform: translateX(-50%);
         background: var(--color-bg-header);
         color: var(--color-text);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-accent);
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        white-space: pre-line;
+        text-align: left;
         padding: var(--tooltip-padding);
         border-radius: var(--tooltip-radius);
         font-size: var(--tooltip-font-size);
         max-width: var(--tooltip-max-w);
         width: max-content;
-        white-space: normal;
         line-height: 1.5;
         pointer-events: none;
         opacity: 0;
         transition: opacity 0.15s;
         z-index: 10;
-        box-shadow: var(--color-glow);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), var(--color-glow);
     }
     &[data-tooltip]:not([data-tooltip=""]):hover::after {
         opacity: 1;
+    }
+
+    &[data-tooltip]:hover {
+        z-index: 250;
     }
 }
 
