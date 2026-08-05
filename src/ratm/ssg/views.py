@@ -251,46 +251,5 @@ def threats_components_view(
         "component_classes": Counter(
             comp.component_class or "Other" for _, comp in sorted_components
         ),
-        "severity_classes": Counter(t.severity or "Unknown" for _, t in active_threats),
         "status": status,
-    }
-
-
-@view("/stats.html", log="Generating stats.html...")
-def stats_view(
-    config: SiteConfig,
-    model: ThreatModel,
-) -> dict[str, Any]:
-    analysis = model.analyze()
-    active_threat_ids = set(analysis["threat_counter"])
-
-    pairs = [
-        (threat, comp)
-        for tid in active_threat_ids
-        if (threat := model.threats.get(tid)) is not None
-        for comp in model.components.values()
-        if threat.applies_to(comp)
-    ]
-    mitigated = sum(1 for t, c in pairs if t.is_mitigated(c))
-    unmitigated = len(pairs) - mitigated
-
-    comp_threat_counts = Counter(
-        {name: len(tids) for name, tids in analysis["components_to_threats"].items()}
-    )
-
-    unmapped = sorted(
-        tid
-        for tid in active_threat_ids
-        if tid in model.threats and not model.threats[tid].mapping.mitigations
-    )
-
-    return {
-        "config": config,
-        "model": model,
-        "analysis": analysis,
-        "mitigated": mitigated,
-        "unmitigated": unmitigated,
-        "total_pairs": mitigated + unmitigated,
-        "most_affected_components": comp_threat_counts.most_common(10),
-        "unmapped_threats": unmapped,
     }
