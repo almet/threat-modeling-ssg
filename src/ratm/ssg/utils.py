@@ -77,3 +77,22 @@ def render_views(env, output_dir, data: dict[str, Any]) -> None:
 
 def slugify(value: str) -> str:
     return re.sub(r"[^\w]", "_", value)
+
+
+def _strip_family(part: str) -> str:
+    negated = part.startswith("!")
+    if negated:
+        part = part[1:]
+    if part.startswith(("ctx_", "mit_")):
+        part = part[4:]
+    return ("!" if negated else "") + part
+
+
+def display_token(token: str) -> str:
+    stripped = ".".join(_strip_family(part) for part in str(token).split("."))
+    return stripped.replace("_", " ").replace("!", "not ")
+
+
+def property_href(token: str) -> str:
+    base = str(token).replace("!", "").split(".")[0]
+    return f"property_{slugify(base)}.html"
