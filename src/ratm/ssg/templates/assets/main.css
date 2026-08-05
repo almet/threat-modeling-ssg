@@ -250,6 +250,14 @@ nav {
             background-color: var(--color-bg-hover);
         }
     }
+
+    a.nav-active,
+    a.nav-active:visited {
+        background-color: var(--color-accent);
+        color: var(--color-bg);
+        text-shadow: none;
+        box-shadow: var(--color-glow);
+    }
 }
 
 .content {
