@@ -61,9 +61,10 @@
     --table-col-max-height: 210px;
     --table-col-angle:    -55deg;
     --table-sticky-max-w: 400px;
-    --tooltip-max-w:      320px;
+    --diagram-max-height: 60vh;
+    --tooltip-max-w:      360px;
     --tooltip-font-size:  0.85em;
-    --tooltip-padding:    6px 10px;
+    --tooltip-padding:    8px 12px;
     --tooltip-radius:     4px;
 }
 
@@ -628,6 +629,16 @@ tbody tr:hover {
     background: var(--color-bg-container);
     transition: transform 0.25s ease;
     cursor: zoom-in;
+}
+
+.dfd-container svg,
+.mermaid-container svg {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: var(--diagram-max-height);
+    margin: 0 auto;
 }
 
 .mermaid-container svg text {
