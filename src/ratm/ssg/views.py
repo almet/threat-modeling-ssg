@@ -21,11 +21,32 @@ def threats_view(
     config: SiteConfig,
     model: ThreatModel,
 ) -> dict[str, Any]:
+    all_props = list(model.properties)
+    severity_tables = []
+    for severity in ["Very High", "High", "Medium", "Low", "Unknown"]:
+        threats = sorted(
+            (tid, t)
+            for tid, t in model.threats.items()
+            if (t.severity or "Unknown") == severity
+        )
+        if not threats:
+            continue
+        props = [
+            p
+            for p in all_props
+            if any(
+                t.mapping.requirements_for_prop(p) or t.mapping.mitigations_for_prop(p)
+                for _, t in threats
+            )
+        ]
+        severity_tables.append(
+            {"severity": severity, "threats": threats, "props": props}
+        )
     return {
         "config": config,
         "model": model,
         "analysis": model.analyze(),
-        "all_threat_props": list(model.properties),
+        "severity_tables": severity_tables,
     }
 
 
