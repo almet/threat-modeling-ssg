@@ -8,7 +8,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from . import views  # noqa: F401 — registers @view decorators
 from .models import SiteConfig, ThreatModel
-from .utils import render_views, slugify
+from .utils import display_token, property_href, render_views, slugify
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
@@ -47,6 +47,8 @@ def main(output_dir):
     env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
     env.filters["basename"] = lambda p: Path(p).name
     env.filters["slugify"] = slugify
+    env.filters["display"] = display_token
+    env.filters["property_href"] = property_href
 
     # FIXME: These are a bit hackish, but work.
     env.filters["sort_by_class"] = lambda d: sorted(

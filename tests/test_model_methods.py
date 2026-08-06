@@ -9,6 +9,8 @@ from ratm.ssg.models import (
     Threat,
     ThreatMapping,
     ThreatModel,
+    _token_props,
+    _token_satisfied,
 )
 
 
@@ -487,3 +489,59 @@ def test_threat_unimplemented_multiple(model_factory) -> None:
         )
         == []
     )
+
+
+@pytest.mark.parametrize(
+    ("token", "expected"),
+    [
+        ("is_exposed", True),
+        ("!is_exposed", False),
+        ("encrypts_secrets", False),
+        ("!encrypts_secrets", True),
+        ("loads_resources.deps", True),
+        ("loads_resources.source", False),
+        ("!loads_resources.source", True),
+        ("requires_credentials == uses_strong_credentials", False),
+        ("requires_credentials != uses_strong_credentials", True),
+    ],
+)
+def test_token_satisfied(token, expected) -> None:
+    component = Component(
+        name="A",
+        component_class="Process",
+        properties={
+            "is_exposed": True,
+            "loads_resources": ["deps"],
+            "requires_credentials": True,
+        },
+    )
+    assert _token_satisfied(component, token) is expected
+
+
+@pytest.mark.parametrize(
+    ("token", "expected"),
+    [
+        ("is_exposed", ["is_exposed"]),
+        ("!encrypts_secrets", ["encrypts_secrets"]),
+        ("verifies_resources.deps", ["verifies_resources"]),
+        (
+            "requires_credentials != uses_strong_credentials",
+            ["requires_credentials", "uses_strong_credentials"],
+        ),
+    ],
+)
+def test_token_props(token, expected) -> None:
+    assert _token_props(token) == expected
+
+
+def test_mapping_props_cover_negated_and_compared_tokens() -> None:
+    mapping = ThreatMapping(
+        requirements=["stores_secrets", "!encrypts_secrets"],
+        mitigations=["requires_credentials != uses_strong_credentials"],
+    )
+    assert mapping.requirement_props == {"stores_secrets", "encrypts_secrets"}
+    assert mapping.requirements_for_prop("encrypts_secrets") == ["!encrypts_secrets"]
+    assert mapping.mitigation_props == {
+        "requires_credentials",
+        "uses_strong_credentials",
+    }

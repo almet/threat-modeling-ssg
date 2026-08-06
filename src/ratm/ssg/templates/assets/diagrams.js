@@ -16,10 +16,7 @@
             dfdContainers.forEach(function (container) {
                 var source = container.querySelector(".diagram-source");
                 if (!source) return;
-                var svg = viz.renderSVGElement(source.textContent);
-                svg.style.width = "100%";
-                svg.style.height = "auto";
-                container.appendChild(svg);
+                container.appendChild(viz.renderSVGElement(source.textContent));
             });
         });
         dfdContainers.forEach(trackZoomOrigin);
@@ -77,6 +74,7 @@
 
         renderDiagrams();
         document.addEventListener("theme-changed", function () {
+            if (!mermaidContainers.some(function (c) { return document.contains(c); })) return;
             setTimeout(renderDiagrams, 50);
         });
         mermaidContainers.forEach(trackZoomOrigin);

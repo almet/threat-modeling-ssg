@@ -17,14 +17,17 @@
     <div class="main-container">
         <header>
             <div class="heading-left">
-                <h1><a href="index.html">{{ config.title }}</a></h1>
+                <h1><a href="index.html">Threat model for "{{ config.title }}"</a></h1>
                 <nav>
-                    <a href="index.html">Summary</a>
-                    <a href="threats.html">Threats</a>
-                    <a href="components.html">Components</a>
-                    <a href="scenarios.html">Scenarios</a>
-                    <a href="threats_components.html">Matrix</a>
-                    <a href="stats.html">Stats</a>
+                    {% for href, label in [
+                        ("index.html", "Summary"),
+                        ("scenarios.html", "Scenarios"),
+                        ("threats_components.html", "Matrix"),
+                        ("threats.html", "Threats"),
+                        ("components.html", "Components"),
+                    ] %}
+                    <a href="{{ href }}"{% if href == active_page | default('') %} class="nav-active"{% endif %}>{{ label }}</a>
+                    {% endfor %}
                 </nav>
             </div>
             <div class="heading-right">
@@ -32,7 +35,6 @@
                     <input type="checkbox" id="theme-toggle-input">
                     <span class="theme-toggle__track"><span class="theme-toggle__thumb"></span></span>
                 </label>
-                <img class="site-logo" src="{{ config.logo or 'assets/icon.png' }}" alt="{{ config.title }}">
             </div>
         </header>
         <div class="content">

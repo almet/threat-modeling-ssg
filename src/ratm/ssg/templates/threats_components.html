@@ -1,5 +1,17 @@
 {% extends "base.html" %}
+{% set active_page = "threats_components.html" %}
 {% block title %}Threats × Components - Threat Model{% endblock %}
+
+{% macro mitigation_tags(satisfied, missing) %}
+{% if not satisfied and not missing %}
+<span class="cell-tip__none">No mitigation exists for this threat.</span>
+{% else %}
+<span class="cell-tip__tags">
+    {% for tok in satisfied %}<span class="tag tag--true">{{ tok | display }}</span>{% endfor %}
+    {% for tok in missing %}<span class="tag tag--false">{{ tok | display }}</span>{% endfor %}
+</span>
+{% endif %}
+{% endmacro %}
 
 {% block content %}
 <h1>Threats × Components</h1>
@@ -9,20 +21,18 @@
 <div class="prop-table-wrap">
 <table class="prop-table" id="tc-table">
     <thead>
-        <tr class="tc-class-row">
-            <th class="prop-sticky"></th>
-            {% for sev, count in severity_classes.items() %}
-            <th class="tc-class-header" colspan="{{ count }}">{{ sev }}</th>
-            {% endfor %}
-        </tr>
         <tr>
             <th class="prop-sticky">Component</th>
             {% for tid, threat in active_threats %}
-            <th class="prop-col" style="z-index: {{ loop.revindex }}"
-                data-tooltip="{{ tid }} · {{ threat.description }} ({{ threat.severity or 'Unknown' }}) | Mitigated by: {{ threat.mapping.mitigations | join(', ') | replace('_', ' ') | replace('.', ': ') }}">
+            <th class="prop-col" style="z-index: {{ loop.revindex }}">
                 <div>
                     <a href="threat_{{ tid }}.html">{{ tid }} - {{ threat.description }}</a>
                 </div>
+                <span class="cell-tip">
+                    <span class="cell-tip__title">{{ tid }} · {{ threat.description }}</span>
+                    <span class="cell-tip__meta">Severity: {{ threat.severity or "Unknown" }}</span>
+                    {{ mitigation_tags([], threat.mapping.mitigations) }}
+                </span>
             </th>
             {% endfor %}
         </tr>
@@ -44,15 +54,16 @@
             {% for tid, threat in active_threats %}
             {% set cell = status[tid].get(comp_name) %}
             {% if cell %}
-                {% if cell.mitigated %}
-                <td class="prop-cell prop-mit"
-                    data-tooltip="{{ tid }} · {{ threat.description }} | {{ comp_name }} | Mitigated ({{ cell.satisfied }}){% if cell.missing %} · Missing: {{ cell.missing }}{% endif %}">&#x2713;</td>
-                {% else %}
-                <td class="prop-cell prop-req"
-                    data-tooltip="{{ tid }} · {{ threat.description }} | {{ comp_name }} | Not mitigated · Missing: {{ cell.missing }}">&#x2717;</td>
-                {% endif %}
+            <td class="prop-cell {{ 'prop-mit' if cell.mitigated else 'prop-req' }}">
+                {{ '&#x2713;' if cell.mitigated else '&#x2717;' }}
+                <span class="cell-tip">
+                    <span class="cell-tip__title">{{ tid }} · {{ threat.description }}</span>
+                    <span class="cell-tip__meta">{{ comp_name }} — {{ 'mitigated' if cell.mitigated else 'not mitigated' }}</span>
+                    {{ mitigation_tags(cell.satisfied, cell.missing) }}
+                </span>
+            </td>
             {% else %}
-                <td class="prop-cell"></td>
+            <td class="prop-cell"></td>
             {% endif %}
             {% endfor %}
         </tr>

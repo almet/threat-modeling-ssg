@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% set active_page = "threats.html" %}
 {% block title %}All Threats - Threat Model{% endblock %}
 
 {% block content %}
 <h1>All Threats</h1>
 
-<p>{{ model.threats | length }} CAPEC threats defined &mdash; {{ analysis.threat_counter | length }} appear in scenario findings.</p>
+<p>{{ model.threats | length }} threats defined &mdash; {{ analysis.threat_counter | length }} appear in scenario findings.</p>
 
 {% include "includes/threats_table.html" %}
 

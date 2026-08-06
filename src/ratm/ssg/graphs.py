@@ -83,6 +83,8 @@ def generate_dataflow(scenario: Scenario, components: dict[str, Component]) -> s
                 f"{indent}    color = black;",
                 f"{indent}    fontcolor = black;",
                 f'{indent}    label = "{label}";',
+                f'{indent}    URL = "component_{slug(comp.name)}.html";',
+                f'{indent}    tooltip = "{comp.name}";',
                 f"{indent}    margin = 0.02;",
                 f"{indent}]",
                 "",
@@ -216,6 +218,9 @@ def generate_sequence(scenario: Scenario) -> str:
     lines = ["sequenceDiagram"]
     for name in participants:
         lines.append(f"    participant {alias(name)} as {name}")
+        lines.append(
+            f"    link {alias(name)}: Component @ component_{alias(name)}.html"
+        )
     lines.append("")
     for i, flow in enumerate(scenario.flows, 1):
         arrow = "-->>" if flow.is_response else "->>"

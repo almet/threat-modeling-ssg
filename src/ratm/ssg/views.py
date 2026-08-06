@@ -5,7 +5,7 @@ from typing import Any
 
 from .graphs import generate_highlighted_dataflow
 from .models import Component, SiteConfig, ThreatModel, _token_satisfied
-from .utils import slugify, view
+from .utils import display_token, slugify, view
 
 
 @view("/index.html", log="Generating index.html...")
@@ -21,11 +21,32 @@ def threats_view(
     config: SiteConfig,
     model: ThreatModel,
 ) -> dict[str, Any]:
+    all_props = list(model.properties)
+    severity_tables = []
+    for severity in ["Very High", "High", "Medium", "Low", "Unknown"]:
+        threats = sorted(
+            (tid, t)
+            for tid, t in model.threats.items()
+            if (t.severity or "Unknown") == severity
+        )
+        if not threats:
+            continue
+        props = [
+            p
+            for p in all_props
+            if any(
+                t.mapping.requirements_for_prop(p) or t.mapping.mitigations_for_prop(p)
+                for _, t in threats
+            )
+        ]
+        severity_tables.append(
+            {"severity": severity, "threats": threats, "props": props}
+        )
     return {
         "config": config,
         "model": model,
         "analysis": model.analyze(),
-        "all_threat_props": list(model.properties),
+        "severity_tables": severity_tables,
     }
 
 
@@ -120,12 +141,43 @@ def component_view(
         }
 
 
+_PLURAL_CLASSES = {
+    "Actor": "Actors",
+    "Boundary": "Boundaries",
+    "Component": "Components",
+}
+
+
 @view("/components.html", log="Generating components.html...")
 def components_view(
     config: SiteConfig,
     model: ThreatModel,
 ) -> dict[str, Any]:
-    return {"config": config, "model": model}
+    prop_keys = list(model.properties)
+    members_by_class: dict[str, list] = {}
+    for name, component in sorted(
+        model.components.items(), key=lambda x: x[1].component_class
+    ):
+        if component.component_class in config.hide_components_with_category:
+            continue
+        members_by_class.setdefault(component.component_class, []).append(
+            (name, component)
+        )
+    class_tables = [
+        {
+            "label": _PLURAL_CLASSES.get(cls, cls),
+            "members": members,
+            "props": [
+                key
+                for key in prop_keys
+                if any(
+                    comp.get_property(key) not in (False, None) for _, comp in members
+                )
+            ],
+        }
+        for cls, members in members_by_class.items()
+    ]
+    return {"config": config, "model": model, "class_tables": class_tables}
 
 
 @view(
@@ -158,9 +210,7 @@ def property_view(
             "prop_slug": slug,
             "data": {
                 "label": prop.name,
-                "display_label": (
-                    prop_key.replace("_", " ").replace("!", "not ").title()
-                ),
+                "display_label": display_token(prop_key).title(),
                 "slug": slug,
                 "mitigated_threats": mitigated_threats,
                 "would_be_mitigated_threats": would_be_mitigated_threats,
@@ -220,9 +270,6 @@ def threats_components_view(
         key=sort_key,
     )
 
-    def fmt(tok: str) -> str:
-        return tok.replace("_", " ").replace(".", ": ")
-
     affected: dict[str, Component] = {}
     status: dict[str, dict[str, dict]] = {}
     for tid, threat in active_threats:
@@ -236,8 +283,8 @@ def threats_components_view(
                 (satisfied if _token_satisfied(comp, tok) else missing).append(tok)
             status[tid][comp_name] = {
                 "mitigated": bool(satisfied),
-                "satisfied": ", ".join(fmt(t) for t in satisfied),
-                "missing": ", ".join(fmt(t) for t in missing),
+                "satisfied": satisfied,
+                "missing": missing,
             }
 
     sorted_components = sorted(
@@ -251,46 +298,5 @@ def threats_components_view(
         "component_classes": Counter(
             comp.component_class or "Other" for _, comp in sorted_components
         ),
-        "severity_classes": Counter(t.severity or "Unknown" for _, t in active_threats),
         "status": status,
-    }
-
-
-@view("/stats.html", log="Generating stats.html...")
-def stats_view(
-    config: SiteConfig,
-    model: ThreatModel,
-) -> dict[str, Any]:
-    analysis = model.analyze()
-    active_threat_ids = set(analysis["threat_counter"])
-
-    pairs = [
-        (threat, comp)
-        for tid in active_threat_ids
-        if (threat := model.threats.get(tid)) is not None
-        for comp in model.components.values()
-        if threat.applies_to(comp)
-    ]
-    mitigated = sum(1 for t, c in pairs if t.is_mitigated(c))
-    unmitigated = len(pairs) - mitigated
-
-    comp_threat_counts = Counter(
-        {name: len(tids) for name, tids in analysis["components_to_threats"].items()}
-    )
-
-    unmapped = sorted(
-        tid
-        for tid in active_threat_ids
-        if tid in model.threats and not model.threats[tid].mapping.mitigations
-    )
-
-    return {
-        "config": config,
-        "model": model,
-        "analysis": analysis,
-        "mitigated": mitigated,
-        "unmitigated": unmitigated,
-        "total_pairs": mitigated + unmitigated,
-        "most_affected_components": comp_threat_counts.most_common(10),
-        "unmapped_threats": unmapped,
     }

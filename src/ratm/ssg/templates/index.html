@@ -1,8 +1,19 @@
 {% extends "base.html" %}
+{% set active_page = "index.html" %}
 
 {% block title %}Summary - Threat Model{% endblock %}
 
 {% block content %}
+{% set diagram_scenarios = model.scenarios | selectattr("dfd") | list %}
+{% if diagram_scenarios %}
+{% for scenario in diagram_scenarios %}
+<details class="scenario-diagram" name="scenario-picker"{% if loop.first %} open{% endif %}>
+    <summary>{{ scenario.name }}</summary>
+    {% with src=scenario.dfd %}{% include "includes/dfd_diagram.html" %}{% endwith %}
+</details>
+{% endfor %}
+{% endif %}
+
 <div class="stats">
     <a href="/threats.html" class="count-box count-box--red">
         <div class="count-box__value">{{ analysis.threat_counter | length }}</div>
@@ -13,15 +24,9 @@
         <div class="count-box__value">{{ model.scenarios | length }}</div>
         <div class="count-box__label">Scenarios</div>
     </div>
-    <div class="count-box count-box--blue">
-        <div class="count-box__value">{{ model.components | length }}</div>
-        <div class="count-box__label">Components</div>
-    </div>
 </div>
 
-{% include "includes/components_table.html" %}
-
-<h2>CAPEC Threats by Frequency <a href="threats.html" class="section-link">See all threats →</a></h2>
+<h2>Threats by frequency <a href="threats.html" class="section-link">See all threats →</a></h2>
 <table>
     <thead>
         <tr>
@@ -52,4 +57,9 @@
     {% endfor %}
 </ul>
 
+{% endblock %}
+
+{% block scripts %}
+{% set has_dfd = model.scenarios | selectattr("dfd") | list | length > 0 %}
+{% include "includes/diagram_scripts.html" %}
 {% endblock %}

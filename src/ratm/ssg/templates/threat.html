@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% set active_page = "threats.html" %}
 
 {% block title %}{{ threat_id }}: {{ threat.description }} - Threat Model{% endblock %}
 
@@ -47,7 +48,7 @@
         <p>Component properties that must be true for this threat to apply:</p>
         <div class="tag-list">
             {% for prop in threat.mapping.requirements %}
-            <span class="tag tag--true">{{ prop | replace('_', ' ') }}</span>
+            <a href="{{ prop | property_href }}" class="tag tag--true">{{ prop | display }}</a>
             {% else %}
             <em>None specified.</em>
             {% endfor %}
@@ -58,7 +59,7 @@
         <p>Component properties that mitigate this threat:</p>
         <div class="tag-list">
             {% for prop in threat.mapping.mitigations %}
-            <span class="tag tag--false">{{ prop | replace('_', ' ') }}</span>
+            <a href="{{ prop | property_href }}" class="tag tag--false">{{ prop | display }}</a>
             {% else %}
             <em>None specified.</em>
             {% endfor %}
@@ -92,9 +93,8 @@
 
 <h2>Affected Scenarios</h2>
 {% if threat_scenario_data %}
-<button onclick="document.querySelectorAll('.scenario-details').forEach(d => d.open = true)">Unfold all</button>
 {% for item in threat_scenario_data %}
-<details class="scenario-details">
+<details class="scenario-details" open>
     <summary>
         <a href="scenario_{{ item.scenario.name.replace(' ', '_') }}.html">{{ item.scenario.name }}</a>
         <span class="affected-components-inline">

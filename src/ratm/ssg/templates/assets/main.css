@@ -61,9 +61,10 @@
     --table-col-max-height: 210px;
     --table-col-angle:    -55deg;
     --table-sticky-max-w: 400px;
-    --tooltip-max-w:      320px;
+    --diagram-max-height: 60vh;
+    --tooltip-max-w:      360px;
     --tooltip-font-size:  0.85em;
-    --tooltip-padding:    6px 10px;
+    --tooltip-padding:    8px 12px;
     --tooltip-radius:     4px;
 }
 
@@ -103,7 +104,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 body {
-    font-family: 'Share Tech Mono', monospace;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.55;
     margin: 0;
     padding: 0;
     background-color: var(--color-bg);
@@ -249,6 +251,14 @@ nav {
             background-color: var(--color-bg-hover);
         }
     }
+
+    a.nav-active,
+    a.nav-active:visited {
+        background-color: var(--color-accent);
+        color: var(--color-bg);
+        text-shadow: none;
+        box-shadow: var(--color-glow);
+    }
 }
 
 .content {
@@ -383,22 +393,28 @@ nav {
         transform: translateX(-50%);
         background: var(--color-bg-header);
         color: var(--color-text);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-accent);
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        white-space: pre-line;
+        text-align: left;
         padding: var(--tooltip-padding);
         border-radius: var(--tooltip-radius);
         font-size: var(--tooltip-font-size);
         max-width: var(--tooltip-max-w);
         width: max-content;
-        white-space: normal;
         line-height: 1.5;
         pointer-events: none;
         opacity: 0;
         transition: opacity 0.15s;
         z-index: 10;
-        box-shadow: var(--color-glow);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), var(--color-glow);
     }
     &[data-tooltip]:not([data-tooltip=""]):hover::after {
         opacity: 1;
+    }
+
+    &[data-tooltip]:hover {
+        z-index: 250;
     }
 }
 
@@ -451,32 +467,82 @@ th.prop-col.prop-highlight div {
     &:hover { opacity: 1; }
 }
 
-/* Matrix threat-cell tooltip */
-.tc-threat-cell {
-    position: relative;
+.prop-table .cell-tip {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--color-bg-header);
+    color: var(--color-text);
+    border: 1px solid var(--color-accent);
+    padding: var(--tooltip-padding);
+    border-radius: var(--tooltip-radius);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: var(--tooltip-font-size);
+    line-height: 1.5;
+    width: max-content;
+    max-width: var(--tooltip-max-w);
+    white-space: normal;
+    text-align: left;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 10;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), var(--color-glow);
+}
 
-    &::after {
-        content: attr(data-tooltip);
-        position: absolute;
-        bottom: calc(100% + 4px);
-        left: 0;
-        background: var(--color-bg-header);
-        color: var(--color-text);
-        border: 1px solid var(--color-border);
-        padding: var(--tooltip-padding);
-        border-radius: var(--tooltip-radius);
-        font-size: var(--tooltip-font-size);
-        max-width: var(--tooltip-max-w);
-        width: max-content;
-        white-space: normal;
-        line-height: 1.5;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.15s;
-        z-index: 10;
-        box-shadow: var(--color-glow);
-    }
-    &:hover::after { opacity: 1; }
+td.prop-cell:hover .cell-tip,
+th.prop-col:hover .cell-tip {
+    opacity: 1;
+}
+
+td.prop-cell:hover {
+    z-index: 250;
+}
+
+th.prop-col:hover {
+    z-index: 250 !important;
+    background: transparent;
+}
+
+th.prop-col {
+    position: relative;
+}
+
+th.prop-col .cell-tip {
+    bottom: auto;
+    top: calc(100% + 4px);
+    left: 0;
+    transform: none;
+}
+
+.cell-tip__title {
+    font-weight: 600;
+}
+
+.cell-tip__meta {
+    color: var(--color-text-dim);
+}
+
+.cell-tip__none {
+    color: var(--color-text-dim);
+    font-style: italic;
+}
+
+.cell-tip__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.cell-tip .tag {
+    margin: 0;
 }
 
 /* Matrix severity header row */
@@ -630,6 +696,16 @@ tbody tr:hover {
     cursor: zoom-in;
 }
 
+.dfd-container svg,
+.mermaid-container svg {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: var(--diagram-max-height);
+    margin: 0 auto;
+}
+
 .mermaid-container svg text {
     font-size: 14px !important;
     font-family: 'Share Tech Mono', monospace !important;
@@ -755,11 +831,6 @@ a.count-box:hover {
 .count-box--teal:hover   { box-shadow: 0 8px 20px var(--color-count-teal-glow); }
 .count-box--grey:hover   { box-shadow: 0 8px 20px var(--color-count-grey-glow); }
 
-.site-logo {
-    max-height: 60px;
-    display: block;
-    margin-bottom: 10px;
-}
 
 .severity-chart {
     margin: 16px 0 24px 0;
@@ -824,4 +895,12 @@ footer {
 .freq-cell {
     font-weight: bold;
     color: var(--color-1);
+}
+
+svg a {
+    cursor: pointer;
+    text-shadow: none;
+
+    text { text-decoration: none; }
+    &:hover text { text-decoration: underline; }
 }

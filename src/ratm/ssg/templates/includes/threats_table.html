@@ -1,39 +1,27 @@
-{% if model.threats %}
-{% set severity_order = ['Very High', 'High', 'Medium', 'Low', 'Unknown'] %}
-{% set col_span = all_threat_props | length + 1 %}
+{% for group in severity_tables %}
 <div class="prop-table-wrap">
 <table class="prop-table">
     <thead>
         <tr>
-            <th class="prop-sticky">Threats</th>
-            {% for prop in all_threat_props %}
+            <th class="prop-sticky prop-section-cell">{{ group.severity }}</th>
+            {% for prop in group.props %}
             <th class="prop-col" style="z-index: {{ loop.revindex }}">
                 <div>
-                    <a href="property_{{ prop | slugify }}.html">{{ prop | replace('_', ' ') | replace('!', 'not ') | title }}</a>
+                    <a href="{{ prop | property_href }}">{{ prop | display | title }}</a>
                 </div>
             </th>
             {% endfor %}
         </tr>
     </thead>
     <tbody>
-        {% for severity in severity_order %}
-        {% set ns = namespace(printed=false) %}
-        {% for threat_id, threat in model.threats | dictsort %}
-        {% set threat_severity = threat.severity or "Unknown" %}
-        {% if threat_severity == severity %}
-        {% if not ns.printed %}
-        <tr class="prop-severity-row">
-            <th colspan="{{ col_span }}">{{ severity }}</th>
-        </tr>
-        {% set ns.printed = true %}
-        {% endif %}
+        {% for threat_id, threat in group.threats %}
         {% set is_active = threat_id in analysis.threat_counter %}
         <tr{% if is_active %} class="prop-threat-active"{% endif %}>
             <td class="prop-sticky{% if is_active %} prop-sticky--active{% endif %}" title="{{ threat_id }}: {{ threat.description }}">
                 <a href="threat_{{ threat_id }}.html">{{ threat_id }}</a>
                 <div class="prop-meta">{{ threat.description | truncate(40) }}</div>
             </td>
-            {% for prop in all_threat_props %}
+            {% for prop in group.props %}
             {% set req_tokens = threat.mapping.requirements_for_prop(prop) %}
             {% set mit_tokens = threat.mapping.mitigations_for_prop(prop) %}
             {% set is_req = req_tokens | length > 0 %}
@@ -45,16 +33,14 @@
             {% elif is_req %}
             <td class="prop-cell prop-req" data-tooltip="{{ threat_id }} · {{ req_tokens | join(', ') }} = requirement">R{% if req_dotted %}*{% endif %}</td>
             {% elif is_mit %}
-            <td class="prop-cell prop-mit" data-tooltip="{{ threat_id }} · {{ mit_tokens | join(', ') }} = mitigation">{% if mit_dotted %}M*{% else %}✓{% endif %}</td>
+            <td class="prop-cell prop-mit" data-tooltip="{{ threat_id }} · {{ mit_tokens | join(', ') }} = mitigation">M{% if mit_dotted %}*{% endif %}</td>
             {% else %}
             <td class="prop-cell prop-false"></td>
             {% endif %}
             {% endfor %}
         </tr>
-        {% endif %}
-        {% endfor %}
         {% endfor %}
     </tbody>
 </table>
 </div>
-{% endif %}
+{% endfor %}
